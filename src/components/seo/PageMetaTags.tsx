@@ -1,0 +1,20 @@
+import { Helmet } from "react-helmet-async";
+import { meta } from "@/content/site";
+import type { PageMeta } from "@/types";
+
+interface PageMetaTagsProps extends PageMeta {
+  ogImage?: string;
+}
+
+export function PageMetaTags({ title, description, ogImage = meta.ogImage }: PageMetaTagsProps) {
+  return (
+    <Helmet>
+      <title>{title}</title>
+      <meta name="description" content={description} />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      <meta property="og:image" content={ogImage} />
+      <meta property="og:type" content="website" />
+    </Helmet>
+  );
+}
