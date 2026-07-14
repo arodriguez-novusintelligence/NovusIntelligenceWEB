@@ -1,12 +1,21 @@
 import type { ContactRequest, ContactResponse } from "@/types";
 
 const API_URL = import.meta.env.VITE_NOVUS_API_URL as string | undefined;
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "true";
 
 /**
  * Submits contact form to production API.
  * No demo fallback — R-001 mitigation per NADF plan.
  */
 export async function submitContact(payload: ContactRequest): Promise<ContactResponse> {
+  if (DEMO_MODE) {
+    return {
+      ok: false,
+      message:
+        "Modo demo deshabilitado en builds productivos. Configura VITE_DEMO_MODE=false y VITE_NOVUS_API_URL.",
+    };
+  }
+
   if (!API_URL) {
     return {
       ok: false,
