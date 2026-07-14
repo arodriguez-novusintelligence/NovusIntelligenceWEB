@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="200" y2="200">
+      <stop offset="0%" stop-color="#3b9eff"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="40" fill="#0f1220"/>
+  <circle cx="100" cy="100" r="60" stroke="url(#g)" stroke-width="8" fill="none"/>
+  <path d="M70 100 L95 125 L130 75" stroke="url(#g)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <text x="100" y="175" text-anchor="middle" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="14" font-weight="600">NOVUS</text>
+</svg>
