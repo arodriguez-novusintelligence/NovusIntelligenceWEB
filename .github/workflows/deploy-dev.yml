@@ -1,0 +1,51 @@
+# Deploy DEV — Vite build + S3 sync (+ CloudFront invalidate) on push to main.
+# Secrets: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, VITE_NOVUS_API_URL
+# Vars: WEB_S3_BUCKET, CLOUDFRONT_DISTRIBUTION_ID, VITE_NOVUS_API_URL (optional)
+name: Deploy DEV
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-dev-web
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Build
+        env:
+          VITE_NOVUS_API_URL: ${{ vars.VITE_NOVUS_API_URL || secrets.VITE_NOVUS_API_URL }}
+        run: npm run build
+      - name: Sync S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: sa-east-1
+          WEB_S3_BUCKET: ${{ vars.WEB_S3_BUCKET }}
+        run: |
+          test -n "$WEB_S3_BUCKET"
+          aws s3 sync dist "s3://${WEB_S3_BUCKET}/" --delete --region sa-east-1
+      - name: Invalidate CloudFront
+        if: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID != '' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
+            --paths "/*"
