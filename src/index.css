@@ -14,8 +14,11 @@
     --muted: 265 25% 18%;
     --muted-foreground: 220 15% 65%;
     --border: 265 20% 22%;
+    --card: 265 30% 12%;
     --navy-deep: 264 40% 8%;
     --navy-surface: 265 30% 14%;
+    --navy-elevated: 265 28% 18%;
+    color-scheme: dark;
   }
 
   html {
@@ -38,6 +41,18 @@
 
   body {
     @apply bg-background font-sans text-foreground antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.35);
+    color: hsl(var(--foreground));
   }
 }
 
@@ -83,5 +98,17 @@
 
   .shadow-glow {
     box-shadow: 0 0 40px hsl(var(--primary) / 0.25);
+  }
+
+  .shadow-card {
+    box-shadow: 0 8px 32px hsl(0 0% 0% / 0.25);
+  }
+
+  .shadow-elevated {
+    box-shadow: 0 24px 48px hsl(0 0% 0% / 0.35);
+  }
+
+  .glow-ring {
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.4);
   }
 }
