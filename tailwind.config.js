@@ -19,8 +19,10 @@ export default {
           foreground: "hsl(var(--muted-foreground) / <alpha-value>)",
         },
         border: "hsl(var(--border) / <alpha-value>)",
+        card: "hsl(var(--card) / <alpha-value>)",
         "navy-deep": "hsl(var(--navy-deep) / <alpha-value>)",
         "navy-surface": "hsl(var(--navy-surface) / <alpha-value>)",
+        "navy-elevated": "hsl(var(--navy-elevated) / <alpha-value>)",
       },
       fontFamily: {
         display: ["Space Grotesk", "system-ui", "sans-serif"],
@@ -29,6 +31,7 @@ export default {
       },
       boxShadow: {
         glow: "0 0 40px hsl(var(--primary) / 0.25)",
+        card: "0 8px 32px hsl(0 0% 0% / 0.25)",
         elevated: "0 24px 48px hsl(0 0% 0% / 0.35)",
       },
       animation: {

@@ -21,12 +21,19 @@ interface ContactFormState {
   solutionInterest: string;
 }
 
+interface FieldErrors {
+  name?: string;
+  email?: string;
+  message?: string;
+}
+
 export function ContactPage() {
   const [searchParams] = useSearchParams();
   const interestParam = searchParams.get("interest") ?? "";
 
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [form, setForm] = useState<ContactFormState>({
     name: "",
     company: "",
@@ -40,12 +47,28 @@ export function ContactPage() {
     (key: keyof ContactFormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
       setForm((prev) => ({ ...prev, [key]: e.target.value }));
+      if (errors[key as keyof FieldErrors]) {
+        setErrors((prev) => ({ ...prev, [key]: undefined }));
+      }
     };
+
+  function validate(): FieldErrors {
+    const next: FieldErrors = {};
+    if (!form.name.trim()) next.name = "El nombre es obligatorio.";
+    if (!form.email.trim()) next.email = "El email es obligatorio.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      next.email = "Ingresa un email válido.";
+    }
+    if (!form.message.trim()) next.message = "El mensaje es obligatorio.";
+    return next;
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
-      toast.error("Completa nombre, email y mensaje.");
+    const validation = validate();
+    if (Object.keys(validation).length > 0) {
+      setErrors(validation);
+      toast.error("Revisa los campos marcados.");
       return;
     }
 
@@ -63,6 +86,7 @@ export function ContactPage() {
       if (res.ok) {
         toast.success(res.message ?? "Gracias, te contactaremos muy pronto.");
         setDone(true);
+        setErrors({});
         setForm({
           name: "",
           company: "",
@@ -100,150 +124,181 @@ export function ContactPage() {
       </section>
 
       <section className="py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-12 lg:grid-cols-5">
-            <div className="lg:col-span-2">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_1.4fr] lg:px-8">
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-border/60 bg-gradient-card p-6 shadow-card">
               <h2 className="font-display text-xl font-bold">Datos de contacto</h2>
-              <ul className="mt-6 space-y-4 text-sm text-muted-foreground">
-                <li className="flex items-center gap-3">
-                  <Mail className="h-5 w-5 text-primary" />
-                  <a href={`mailto:${site.email}`} className="hover:text-foreground">
+              <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
+                <li className="flex items-start gap-3">
+                  <Mail className="mt-0.5 h-4 w-4 text-primary" />
+                  <a href={`mailto:${site.email}`} className="break-all hover:text-foreground">
                     {site.email}
                   </a>
                 </li>
-                <li className="flex items-center gap-3">
-                  <Phone className="h-5 w-5 text-primary" />
+                <li className="flex items-start gap-3">
+                  <Phone className="mt-0.5 h-4 w-4 text-primary" />
                   <a href={site.phoneHref} className="hover:text-foreground">
                     {site.phone}
                   </a>
                 </li>
-                <li className="flex items-center gap-3">
-                  <MapPin className="h-5 w-5 text-primary" />
+                <li className="flex items-start gap-3">
+                  <MapPin className="mt-0.5 h-4 w-4 text-primary" />
                   {site.city}
                 </li>
               </ul>
-              <p className="mt-8 text-xs text-muted-foreground">
-                Al enviar este formulario aceptas nuestra{" "}
-                <Link to="/privacy" className="text-primary hover:underline">
-                  política de privacidad
-                </Link>{" "}
-                y el{" "}
-                <Link to="/data-treatment" className="text-primary hover:underline">
-                  tratamiento de datos
-                </Link>
-                .
+            </div>
+
+            <div className="rounded-2xl border border-border/60 bg-gradient-card p-6 shadow-card">
+              <h3 className="font-display font-semibold">Horario</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Lunes a viernes · 8:00 — 18:00 (COT)
               </p>
             </div>
 
-            <div className="lg:col-span-3">
-              {done ? (
-                <div className="rounded-3xl border border-primary/30 bg-gradient-card p-8 text-center">
-                  <CheckCircle2 className="mx-auto h-12 w-12 text-primary" />
-                  <h2 className="mt-4 font-display text-2xl font-bold">Mensaje enviado</h2>
-                  <p className="mt-2 text-muted-foreground">
-                    Gracias por contactarnos. Te responderemos pronto.
-                  </p>
-                  <Button className="mt-6" onClick={() => setDone(false)}>
-                    Enviar otro mensaje
-                  </Button>
-                </div>
-              ) : (
-                <form
-                  onSubmit={onSubmit}
-                  className="rounded-3xl border border-border/60 bg-gradient-card p-6 sm:p-8"
-                >
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    <div>
-                      <Label htmlFor="name">Nombre *</Label>
-                      <Input
-                        id="name"
-                        name="name"
-                        required
-                        value={form.name}
-                        onChange={update("name")}
-                        className="mt-2"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="company">Empresa</Label>
-                      <Input
-                        id="company"
-                        name="company"
-                        value={form.company}
-                        onChange={update("company")}
-                        className="mt-2"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="email">Email *</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        required
-                        value={form.email}
-                        onChange={update("email")}
-                        className="mt-2"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="phone">Teléfono</Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        value={form.phone}
-                        onChange={update("phone")}
-                        className="mt-2"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <Label htmlFor="solutionInterest">Solución de interés</Label>
-                      <Select
-                        id="solutionInterest"
-                        name="solutionInterest"
-                        value={form.solutionInterest}
-                        onChange={update("solutionInterest")}
-                        className="mt-2"
-                      >
-                        <option value="">Seleccionar…</option>
-                        {solutions.map((s) => (
-                          <option key={s.slug} value={s.slug}>
-                            {s.name}
-                          </option>
-                        ))}
-                      </Select>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <Label htmlFor="message">Mensaje *</Label>
-                      <Textarea
-                        id="message"
-                        name="message"
-                        required
-                        rows={5}
-                        value={form.message}
-                        onChange={update("message")}
-                        className="mt-2"
-                      />
-                    </div>
-                  </div>
-                  <Button type="submit" className="mt-6 w-full sm:w-auto" disabled={submitting}>
-                    {submitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Enviando…
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4" />
-                        Enviar mensaje
-                      </>
-                    )}
-                  </Button>
-                </form>
-              )}
+            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6">
+              <h3 className="font-display font-semibold text-primary">Partner principal</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Soluciones nativas sobre AWS, con soporte adicional para Azure y Google Cloud.
+              </p>
             </div>
           </div>
+
+          <form
+            onSubmit={onSubmit}
+            className="rounded-2xl border border-border/60 bg-gradient-card p-8 shadow-card"
+          >
+            {done ? (
+              <div className="flex flex-col items-center py-12 text-center">
+                <CheckCircle2 className="h-14 w-14 text-primary" />
+                <h2 className="mt-4 font-display text-2xl font-bold">¡Gracias!</h2>
+                <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+                  Tu mensaje fue recibido. Andrés y el equipo te responderán muy pronto.
+                </p>
+                <Button className="mt-6" onClick={() => setDone(false)}>
+                  Enviar otro
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nombre *</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      required
+                      value={form.name}
+                      onChange={update("name")}
+                      autoComplete="name"
+                      aria-invalid={!!errors.name}
+                    />
+                    {errors.name && (
+                      <p className="text-xs text-red-400" role="alert">
+                        {errors.name}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="company">Empresa</Label>
+                    <Input
+                      id="company"
+                      name="company"
+                      value={form.company}
+                      onChange={update("company")}
+                      autoComplete="organization"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email *</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
+                      value={form.email}
+                      onChange={update("email")}
+                      autoComplete="email"
+                      aria-invalid={!!errors.email}
+                    />
+                    {errors.email && (
+                      <p className="text-xs text-red-400" role="alert">
+                        {errors.email}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Teléfono</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      value={form.phone}
+                      onChange={update("phone")}
+                      autoComplete="tel"
+                    />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="solutionInterest">Solución de interés</Label>
+                    <Select
+                      id="solutionInterest"
+                      name="solutionInterest"
+                      value={form.solutionInterest}
+                      onChange={update("solutionInterest")}
+                    >
+                      <option value="">Selecciona una solución (opcional)</option>
+                      {solutions.map((s) => (
+                        <option key={s.slug} value={s.slug}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="message">Mensaje *</Label>
+                    <Textarea
+                      id="message"
+                      name="message"
+                      required
+                      rows={5}
+                      value={form.message}
+                      onChange={update("message")}
+                      placeholder="Cuéntanos brevemente tu reto y objetivos."
+                      aria-invalid={!!errors.message}
+                    />
+                    {errors.message && (
+                      <p className="text-xs text-red-400" role="alert">
+                        {errors.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <p className="mt-4 text-xs text-muted-foreground">
+                  Al enviar aceptas nuestra{" "}
+                  <Link to="/privacy" className="underline hover:text-foreground">
+                    política de privacidad
+                  </Link>{" "}
+                  y el{" "}
+                  <Link to="/data-treatment" className="underline hover:text-foreground">
+                    tratamiento de datos
+                  </Link>
+                  .
+                </p>
+                <Button type="submit" className="mt-6 w-full" disabled={submitting}>
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Enviando…
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      Enviar mensaje
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
+          </form>
         </div>
       </section>
     </>
