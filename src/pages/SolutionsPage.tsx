@@ -45,7 +45,7 @@ export function SolutionsPage() {
         </div>
       </section>
 
-      <CTA primaryLabel="Solicitar demo" secondaryLabel="Ver servicios" secondaryTo="/services" />
+      <CTA />
     </>
   );
 }

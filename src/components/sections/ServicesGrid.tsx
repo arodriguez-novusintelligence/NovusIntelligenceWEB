@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
 import { services } from "@/content/services";
 
 interface ServicesGridProps {
@@ -55,17 +53,6 @@ export function ServicesGrid({ heading = true }: ServicesGridProps) {
           })}
         </div>
 
-        {heading && (
-          <div className="mt-10">
-            <Link
-              to="/services"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
-            >
-              Ver todos los servicios
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        )}
       </div>
     </section>
   );

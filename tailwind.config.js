@@ -35,7 +35,7 @@ export default {
         elevated: "0 24px 48px hsl(0 0% 0% / 0.35)",
       },
       animation: {
-        "novus-pulse": "novus-pulse 3s ease-in-out infinite",
+        "novus-pulse": "novus-pulse 4s ease-in-out infinite",
         "novus-float": "novus-float 6s ease-in-out infinite",
       },
       keyframes: {
@@ -45,7 +45,7 @@ export default {
         },
         "novus-float": {
           "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-12px)" },
+          "50%": { transform: "translateY(-8px)" },
         },
       },
     },

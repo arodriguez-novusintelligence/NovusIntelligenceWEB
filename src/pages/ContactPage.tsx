@@ -123,11 +123,12 @@ export function ContactPage() {
         </div>
       </section>
 
-      <section className="contact-light bg-gradient-light-radial py-20">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_1.4fr] lg:px-8">
+      <section className="relative overflow-hidden bg-gradient-section py-20">
+        <div className="absolute inset-0 grid-bg opacity-20" aria-hidden />
+        <div className="relative mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_1.4fr] lg:px-8">
           <div className="space-y-6">
-            <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-card">
-              <h2 className="font-display text-xl font-bold text-card-foreground">Datos de contacto</h2>
+            <div className="rounded-2xl border border-border/60 bg-navy-elevated p-6 shadow-elevated">
+              <h2 className="font-display text-xl font-bold text-foreground">Datos de contacto</h2>
               <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
                 <li className="flex items-start gap-3">
                   <Mail className="mt-0.5 h-4 w-4 text-primary" />
@@ -143,20 +144,20 @@ export function ContactPage() {
                 </li>
                 <li className="flex items-start gap-3">
                   <MapPin className="mt-0.5 h-4 w-4 text-primary" />
-                  {site.city}
+                  <span className="text-foreground">{site.city}</span>
                 </li>
               </ul>
             </div>
 
-            <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-card">
-              <h3 className="font-display font-semibold text-card-foreground">Horario</h3>
+            <div className="rounded-2xl border border-border/60 bg-navy-elevated p-6 shadow-elevated">
+              <h3 className="font-display font-semibold text-foreground">Horario</h3>
               <p className="mt-2 text-sm text-muted-foreground">
                 Lunes a viernes · 8:00 — 18:00 (COT)
               </p>
             </div>
 
-            <div className="rounded-2xl border border-secondary/30 bg-secondary/10 p-6">
-              <h3 className="font-display font-semibold text-secondary">Partner principal</h3>
+            <div className="rounded-2xl border border-primary/20 bg-primary/10 p-6">
+              <h3 className="font-display font-semibold text-primary">Partner principal</h3>
               <p className="mt-2 text-sm text-muted-foreground">
                 Soluciones nativas sobre AWS, con soporte adicional para Azure y Google Cloud.
               </p>
@@ -165,16 +166,16 @@ export function ContactPage() {
 
           <form
             onSubmit={onSubmit}
-            className="rounded-2xl border border-border/60 bg-card p-8 shadow-card"
+            className="rounded-2xl border border-border/60 bg-navy-elevated p-8 shadow-elevated"
           >
             {done ? (
               <div className="flex flex-col items-center py-12 text-center">
                 <CheckCircle2 className="h-14 w-14 text-primary" />
-                <h2 className="mt-4 font-display text-2xl font-bold text-card-foreground">¡Gracias!</h2>
+                <h2 className="mt-4 font-display text-2xl font-bold text-foreground">¡Gracias!</h2>
                 <p className="mt-2 max-w-sm text-sm text-muted-foreground">
                   Tu mensaje fue recibido. Andrés y el equipo te responderán muy pronto.
                 </p>
-                <Button className="mt-6" onClick={() => setDone(false)}>
+                <Button className="mt-6 shadow-glow hover:opacity-95" onClick={() => setDone(false)}>
                   Enviar otro
                 </Button>
               </div>
@@ -182,7 +183,9 @@ export function ContactPage() {
               <>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-card-foreground">Nombre *</Label>
+                    <Label htmlFor="name" className="text-foreground">
+                      Nombre *
+                    </Label>
                     <Input
                       id="name"
                       name="name"
@@ -191,6 +194,7 @@ export function ContactPage() {
                       onChange={update("name")}
                       autoComplete="name"
                       aria-invalid={!!errors.name}
+                      className="bg-navy-surface/50"
                     />
                     {errors.name && (
                       <p className="text-xs text-red-400" role="alert">
@@ -199,17 +203,22 @@ export function ContactPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="company" className="text-card-foreground">Empresa</Label>
+                    <Label htmlFor="company" className="text-foreground">
+                      Empresa
+                    </Label>
                     <Input
                       id="company"
                       name="company"
                       value={form.company}
                       onChange={update("company")}
                       autoComplete="organization"
+                      className="bg-navy-surface/50"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-card-foreground">Email *</Label>
+                    <Label htmlFor="email" className="text-foreground">
+                      Email *
+                    </Label>
                     <Input
                       id="email"
                       name="email"
@@ -219,6 +228,7 @@ export function ContactPage() {
                       onChange={update("email")}
                       autoComplete="email"
                       aria-invalid={!!errors.email}
+                      className="bg-navy-surface/50"
                     />
                     {errors.email && (
                       <p className="text-xs text-red-400" role="alert">
@@ -227,7 +237,9 @@ export function ContactPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone" className="text-card-foreground">Teléfono</Label>
+                    <Label htmlFor="phone" className="text-foreground">
+                      Teléfono
+                    </Label>
                     <Input
                       id="phone"
                       name="phone"
@@ -235,10 +247,11 @@ export function ContactPage() {
                       value={form.phone}
                       onChange={update("phone")}
                       autoComplete="tel"
+                      className="bg-navy-surface/50"
                     />
                   </div>
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="solutionInterest" className="text-card-foreground">
+                    <Label htmlFor="solutionInterest" className="text-foreground">
                       Solución de interés
                     </Label>
                     <Select
@@ -246,6 +259,7 @@ export function ContactPage() {
                       name="solutionInterest"
                       value={form.solutionInterest}
                       onChange={update("solutionInterest")}
+                      className="bg-navy-surface/50"
                     >
                       <option value="">Selecciona una solución (opcional)</option>
                       {solutions.map((s) => (
@@ -256,7 +270,9 @@ export function ContactPage() {
                     </Select>
                   </div>
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="message" className="text-card-foreground">Mensaje *</Label>
+                    <Label htmlFor="message" className="text-foreground">
+                      Mensaje *
+                    </Label>
                     <Textarea
                       id="message"
                       name="message"
@@ -266,6 +282,7 @@ export function ContactPage() {
                       onChange={update("message")}
                       placeholder="Cuéntanos brevemente tu reto y objetivos."
                       aria-invalid={!!errors.message}
+                      className="bg-navy-surface/50"
                     />
                     {errors.message && (
                       <p className="text-xs text-red-400" role="alert">
@@ -285,7 +302,11 @@ export function ContactPage() {
                   </Link>
                   .
                 </p>
-                <Button type="submit" className="mt-6 w-full" disabled={submitting}>
+                <Button
+                  type="submit"
+                  className="mt-6 w-full shadow-glow hover:opacity-95"
+                  disabled={submitting}
+                >
                   {submitting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
