@@ -40,7 +40,7 @@ export const meta = {
   defaultTitle: "Novus Intelligence Solutions — Building Autonomous Intelligence",
   defaultDescription:
     "Diseñamos, implementamos y operamos soluciones de Inteligencia Artificial, sistemas multiagente y automatización inteligente para empresas en evolución.",
-  ogImage: "/assets/novus/brand-publicidad.svg",
+  ogImage: "/assets/novus/brand-publicidad.png",
 } as const;
 
 export const impactStats = [

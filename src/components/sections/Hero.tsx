@@ -88,14 +88,10 @@ export function Hero() {
             <div className="absolute inset-0 animate-novus-pulse rounded-full bg-gradient-brand opacity-30 blur-3xl" />
             <div className="relative flex h-full w-full items-center justify-center rounded-3xl border border-border/60 bg-gradient-card p-8 shadow-elevated transition-transform duration-300 group-hover:scale-[1.02]">
               <img
-                src="/assets/novus/logo.svg"
+                src="/assets/novus/logo.jpeg"
                 alt="Novus Intelligence Solutions"
                 className="animate-novus-float w-3/4 max-w-xs rounded-2xl"
               />
-              <span className="absolute bottom-4 left-1/2 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-primary/40 bg-background/70 px-3 py-1.5 text-xs font-medium text-foreground backdrop-blur-md transition-all group-hover:border-primary group-hover:shadow-glow">
-                <Play className="h-3 w-3 text-primary" />
-                Click para simular el framework
-              </span>
             </div>
           </button>
         </div>
