@@ -96,10 +96,10 @@ export function AboutPage() {
         </div>
         <div className="mx-auto mt-12 flex max-w-7xl flex-wrap justify-center gap-3 px-4">
           <Link to="/solutions">
-            <Button>Ver soluciones</Button>
+            <Button className="shadow-glow hover:opacity-95">Ver soluciones</Button>
           </Link>
           <Link to="/contact">
-            <Button variant="outline" className="border-border bg-card/30">
+            <Button variant="outline" className="border-border bg-card/30 hover:bg-card/60">
               Hablemos
             </Button>
           </Link>
