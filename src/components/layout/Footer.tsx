@@ -11,7 +11,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid gap-12 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <NovusLogo size="md" />
+            <NovusLogo size={44} />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
               {site.taglineEs}. Diseñamos, implementamos y operamos soluciones basadas en IA,
               sistemas multiagente y automatización avanzada.

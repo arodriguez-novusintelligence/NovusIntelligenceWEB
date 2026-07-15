@@ -123,11 +123,11 @@ export function ContactPage() {
         </div>
       </section>
 
-      <section className="py-20">
+      <section className="contact-light bg-gradient-light-radial py-20">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_1.4fr] lg:px-8">
           <div className="space-y-6">
-            <div className="rounded-2xl border border-border/60 bg-gradient-card p-6 shadow-card">
-              <h2 className="font-display text-xl font-bold">Datos de contacto</h2>
+            <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-card">
+              <h2 className="font-display text-xl font-bold text-card-foreground">Datos de contacto</h2>
               <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
                 <li className="flex items-start gap-3">
                   <Mail className="mt-0.5 h-4 w-4 text-primary" />
@@ -148,15 +148,15 @@ export function ContactPage() {
               </ul>
             </div>
 
-            <div className="rounded-2xl border border-border/60 bg-gradient-card p-6 shadow-card">
-              <h3 className="font-display font-semibold">Horario</h3>
+            <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-card">
+              <h3 className="font-display font-semibold text-card-foreground">Horario</h3>
               <p className="mt-2 text-sm text-muted-foreground">
                 Lunes a viernes · 8:00 — 18:00 (COT)
               </p>
             </div>
 
-            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6">
-              <h3 className="font-display font-semibold text-primary">Partner principal</h3>
+            <div className="rounded-2xl border border-secondary/30 bg-secondary/10 p-6">
+              <h3 className="font-display font-semibold text-secondary">Partner principal</h3>
               <p className="mt-2 text-sm text-muted-foreground">
                 Soluciones nativas sobre AWS, con soporte adicional para Azure y Google Cloud.
               </p>
@@ -165,12 +165,12 @@ export function ContactPage() {
 
           <form
             onSubmit={onSubmit}
-            className="rounded-2xl border border-border/60 bg-gradient-card p-8 shadow-card"
+            className="rounded-2xl border border-border/60 bg-card p-8 shadow-card"
           >
             {done ? (
               <div className="flex flex-col items-center py-12 text-center">
                 <CheckCircle2 className="h-14 w-14 text-primary" />
-                <h2 className="mt-4 font-display text-2xl font-bold">¡Gracias!</h2>
+                <h2 className="mt-4 font-display text-2xl font-bold text-card-foreground">¡Gracias!</h2>
                 <p className="mt-2 max-w-sm text-sm text-muted-foreground">
                   Tu mensaje fue recibido. Andrés y el equipo te responderán muy pronto.
                 </p>
@@ -182,7 +182,7 @@ export function ContactPage() {
               <>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nombre *</Label>
+                    <Label htmlFor="name" className="text-card-foreground">Nombre *</Label>
                     <Input
                       id="name"
                       name="name"
@@ -199,7 +199,7 @@ export function ContactPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="company">Empresa</Label>
+                    <Label htmlFor="company" className="text-card-foreground">Empresa</Label>
                     <Input
                       id="company"
                       name="company"
@@ -209,7 +209,7 @@ export function ContactPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email *</Label>
+                    <Label htmlFor="email" className="text-card-foreground">Email *</Label>
                     <Input
                       id="email"
                       name="email"
@@ -227,7 +227,7 @@ export function ContactPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Teléfono</Label>
+                    <Label htmlFor="phone" className="text-card-foreground">Teléfono</Label>
                     <Input
                       id="phone"
                       name="phone"
@@ -238,7 +238,9 @@ export function ContactPage() {
                     />
                   </div>
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="solutionInterest">Solución de interés</Label>
+                    <Label htmlFor="solutionInterest" className="text-card-foreground">
+                      Solución de interés
+                    </Label>
                     <Select
                       id="solutionInterest"
                       name="solutionInterest"
@@ -254,7 +256,7 @@ export function ContactPage() {
                     </Select>
                   </div>
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="message">Mensaje *</Label>
+                    <Label htmlFor="message" className="text-card-foreground">Mensaje *</Label>
                     <Textarea
                       id="message"
                       name="message"
