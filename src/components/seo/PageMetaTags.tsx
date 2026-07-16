@@ -23,6 +23,11 @@ export function PageMetaTags({ title, description, ogImage = meta.ogImage }: Pag
       <meta property="og:description" content={description} />
       <meta property="og:image" content={absoluteOgImage} />
       <meta property="og:type" content="website" />
+      <meta property="og:locale" content="es_CO" />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={absoluteOgImage} />
     </Helmet>
   );
 }
