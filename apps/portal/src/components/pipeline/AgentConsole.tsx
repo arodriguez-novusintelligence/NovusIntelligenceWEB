@@ -59,7 +59,7 @@ export function AgentConsole({ events, working }: { events: AgentEvent[]; workin
         {events.map((e) => {
           const Icon = ICON[e.kind] ?? CircleDot;
           return (
-            <li key={e.id} className="flex animate-nadf-rise gap-3">
+            <li key={e.id} data-event-id={e.id} className="flex animate-nadf-rise gap-3">
               <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", ICON_TONE[e.kind])} aria-hidden="true" />
               <div className="min-w-0 flex-1">
                 <p className={cn("whitespace-pre-wrap break-words text-sm", TONE[e.kind])}>{e.text}</p>

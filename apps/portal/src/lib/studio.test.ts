@@ -86,3 +86,12 @@ describe("studio", () => {
     expect(diffRules(["a", "b"], ["b", "c"])).toEqual({ added: ["c"], removed: ["a"] });
   });
 });
+
+describe("foco del canvas", () => {
+  it("enfoca el nodo seleccionado y sus vecinos; si no, lo activo; si no, el inicio", async () => {
+    const { focusNodes } = await import("./studio");
+    expect(focusNodes(WF, {}, "preview").sort()).toEqual(["frontend-integration-agent", "preview", "qa-agent", "security-agent", "security-gate"].sort());
+    expect(focusNodes(WF, { "human-approval": { status: "WAITING_APPROVAL", attempts: [] } }, null)).toContain("human-approval");
+    expect(focusNodes(WF, {}, null)).toEqual(["request", "prod-preflight", "architect-agent", "frontend-integration-agent"]);
+  });
+});

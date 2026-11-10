@@ -141,3 +141,15 @@ export function diffRules(before: string[], after: string[]) {
     removed: before.filter((r) => !after.includes(r)),
   };
 }
+
+/**
+ * Nodos a enfocar en el canvas: el seleccionado y sus vecinos; si no hay selección, lo que está
+ * ejecutándose, esperando o detenido; si nada, el inicio del plan.
+ */
+export function focusNodes(wf: Workflow, nodeState: Record<string, NodeState>, selected: string | null): string[] {
+  const neighbors = (id: string) => [id, ...wf.edges.filter((e) => e.source === id).map((e) => e.target), ...wf.edges.filter((e) => e.target === id).map((e) => e.source)];
+  if (selected && wf.nodes.some((n) => n.id === selected)) return [...new Set(neighbors(selected))];
+  const hot = wf.nodes.filter((n) => ["RUNNING", "WAITING_APPROVAL", "FAILED", "BLOCKED"].includes(nodeState[n.id]?.status ?? "")).map((n) => n.id);
+  if (hot.length) return [...new Set(hot.flatMap(neighbors))];
+  return wf.nodes.slice(0, 4).map((n) => n.id);
+}
