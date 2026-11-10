@@ -131,7 +131,7 @@ export function NodeInspector({
       )}
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
-        {children}
+        {tab === "general" && children}
         {tab === "general" && (
           <dl>
             <Row k="Identificador" v={<span className="font-mono text-xs">{node.agentId ?? node.id}</span>} />
