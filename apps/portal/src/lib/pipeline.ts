@@ -20,16 +20,21 @@ export function stepIndex(stage: string | null | undefined, status: RequestStatu
   return idx >= 0 ? idx : 0;
 }
 
-export const ACTIVE: RequestStatus[] = ["queued", "developing", "approved", "deploying"];
+export const ACTIVE: RequestStatus[] = ["planning", "queued", "developing", "approved", "deploying", "rollback_approved", "rolling_back"];
 export const isActive = (status: RequestStatus) => ACTIVE.includes(status);
 
 export const STATUS: Record<RequestStatus, { label: string; tone: "info" | "ai" | "warn" | "good" | "bad" | "muted" }> = {
+  planning: { label: "Planificando", tone: "ai" },
+  planned: { label: "Plan listo", tone: "warn" },
+  rollback_requested: { label: "Rollback solicitado", tone: "warn" },
+  rollback_approved: { label: "Rollback aprobado", tone: "ai" },
+  rolling_back: { label: "Revirtiendo PROD", tone: "ai" },
   queued: { label: "En cola", tone: "info" },
   developing: { label: "La IA está trabajando", tone: "ai" },
   awaiting_approval: { label: "Espera aprobación", tone: "warn" },
   approved: { label: "Aprobado", tone: "ai" },
   deploying: { label: "Desplegando en PROD", tone: "ai" },
-  deployed: { label: "En producción", tone: "good" },
+  deployed: { label: "En PROD · verificado", tone: "good" },
   rejected: { label: "Rechazado", tone: "muted" },
   no_changes: { label: "Sin cambios", tone: "warn" },
   blocked: { label: "Bloqueado por seguridad", tone: "bad" },

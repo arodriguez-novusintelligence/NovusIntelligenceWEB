@@ -1,59 +1,113 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ExternalLink, GitPullRequest, Loader2, MessageSquareQuote, Rocket } from "lucide-react";
-import { ApiError, getRequest, type AgentEvent, type Me, type RequestDetail } from "@/api/client";
+import { Panel, PanelGroup, PanelResizeHandle, type ImperativePanelHandle } from "react-resizable-panels";
+import { ArrowLeft, Cpu, Eye, GitPullRequest, Loader2, PanelBottomClose, PanelBottomOpen, PanelRightClose, PanelRightOpen, Play, Wifi, WifiOff } from "lucide-react";
+import { ApiError, getRequest, startPlan, type AgentEvent, type Me, type RequestDetail } from "@/api/client";
 import { AgentConsole } from "@/components/pipeline/AgentConsole";
-import { AppWindow } from "@/components/pipeline/AppWindow";
-import { DecisionPanel } from "@/components/pipeline/DecisionPanel";
-import { PipelineStepper } from "@/components/pipeline/PipelineStepper";
-import { ReportCard, Screenshots, TestList } from "@/components/pipeline/ReportCard";
 import { StatusBadge } from "@/components/pipeline/StatusBadge";
+import { ApprovalNodePanel, RollbackNodePanel } from "@/components/studio/ApprovalNodePanel";
+import { NodeInspector } from "@/components/studio/NodeInspector";
+import { ResultPanel } from "@/components/studio/ResultPanel";
+import { WorkflowCanvas } from "@/components/studio/WorkflowCanvas";
+import { cn } from "@/lib/cn";
 import { isActive, timeAgo } from "@/lib/pipeline";
+import { functionalSummary, mergeEvents } from "@/lib/studio";
 
-const POLL_MS = 2500;
+const POLL_ACTIVE = 2500;
+const POLL_IDLE = 15000;
 
+function useWide() {
+  const [wide, setWide] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const on = () => setWide(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return wide;
+}
+
+/** Visual Execution Studio de una solicitud. La fuente de verdad es el backend (consulta incremental reanudable). */
 export function RequestDetailPage({ me, mfaEnabled }: { me: Me; mfaEnabled: boolean }) {
   const { id = "" } = useParams();
   const [request, setRequest] = useState<RequestDetail | null>(null);
   const [events, setEvents] = useState<AgentEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [online, setOnline] = useState(true);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [technical, setTechnical] = useState(false);
+  const [bottomTab, setBottomTab] = useState<"console" | "result">("console");
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
+  const [inspectorOpen, setInspectorOpen] = useState(true);
+  const [bottomOpen, setBottomOpen] = useState(true);
   const last = useRef<string | undefined>(undefined);
+  const failures = useRef(0);
+  const inspectorRef = useRef<ImperativePanelHandle>(null);
+  const bottomRef = useRef<ImperativePanelHandle>(null);
+  const wide = useWide();
 
   const load = useCallback(async () => {
     try {
       const data = await getRequest(id, last.current);
       setRequest(data.request);
       if (data.events.length) {
-        last.current = data.events[data.events.length - 1].id;
         setEvents((prev) => {
-          const seen = new Set(prev.map((e) => e.id));
-          return [...prev, ...data.events.filter((e) => !seen.has(e.id))];
+          const merged = mergeEvents(prev, data.events);
+          last.current = merged[merged.length - 1]?.id;
+          return merged;
         });
       }
+      failures.current = 0;
+      setOnline(true);
       setError(null);
       return data.request;
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "No pudimos cargar la solicitud.");
+      failures.current += 1;
+      setOnline(false);
+      if (e instanceof ApiError && (e.status === 404 || e.status === 403)) setError(e.message);
       return null;
     }
   }, [id]);
 
   useEffect(() => {
     last.current = undefined;
+    failures.current = 0;
     setEvents([]);
     setRequest(null);
+    setSelected(null);
     let timer: ReturnType<typeof setTimeout>;
     let stopped = false;
     const tick = async () => {
       const r = await load();
-      if (!stopped) timer = setTimeout(tick, r && isActive(r.status) ? POLL_MS : 15000);
+      if (stopped) return;
+      // Reconexión automática con espera creciente; al volver recupera los eventos desde el último recibido.
+      const backoff = failures.current ? Math.min(30000, 2000 * 2 ** (failures.current - 1)) : null;
+      timer = setTimeout(tick, backoff ?? (r && isActive(r.status) ? POLL_ACTIVE : POLL_IDLE));
     };
     void tick();
+    const onVisible = () => document.visibilityState === "visible" && void load();
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       stopped = true;
       clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [load]);
+
+  // Selección por defecto: lo que está pasando ahora (o lo que necesita una decisión).
+  useEffect(() => {
+    if (!request?.workflow || selected) return;
+    const ns = request.nodeState ?? {};
+    const pick =
+      request.workflow.nodes.find((n) => ns[n.id]?.status === "WAITING_APPROVAL") ??
+      request.workflow.nodes.find((n) => ns[n.id]?.status === "RUNNING") ??
+      request.workflow.nodes.find((n) => ["FAILED", "BLOCKED"].includes(ns[n.id]?.status ?? "")) ??
+      null;
+    if (pick) setSelected(pick.id);
+  }, [request, selected]);
+
+  const summary = useMemo(() => (request ? functionalSummary(request) : null), [request]);
 
   if (error && !request) {
     return (
@@ -68,140 +122,182 @@ export function RequestDetailPage({ me, mfaEnabled }: { me: Me; mfaEnabled: bool
   if (!request) {
     return (
       <p className="flex items-center gap-2 pt-10 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Cargando la solicitud…
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Abriendo el Visual Execution Studio…
       </p>
     );
   }
 
+  const wf = request.workflow;
+  const node = wf?.nodes.find((n) => n.id === selected) ?? null;
   const working = isActive(request.status);
-  const hasPreview = Boolean(request.previewUrl) && !["queued", "developing"].includes(request.status);
-  const routes = request.report?.rutas_a_revisar?.length ? request.report.rutas_a_revisar : ["/"];
+  const canStart = request.status === "planned" && (me.permissions.includes("approvals.decide") || (me.permissions.includes("requests.create") && request.createdBy.id === me.user.id));
+
+  async function runPlan() {
+    setStarting(true);
+    setStartError(null);
+    try {
+      await startPlan(request!.requestId);
+      await load();
+    } catch (e) {
+      setStartError(e instanceof ApiError ? e.message : "No se pudo iniciar la ejecución.");
+    } finally {
+      setStarting(false);
+    }
+  }
+
+  const toggle = (ref: React.RefObject<ImperativePanelHandle>, open: boolean) => (open ? ref.current?.collapse() : ref.current?.expand());
+
+  const canvas = wf ? (
+    <WorkflowCanvas workflow={wf} nodeState={request.nodeState ?? {}} selected={selected} technical={technical} onSelect={setSelected} />
+  ) : (
+    <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+      <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> El Analista y el Orquestador están armando el plan real…
+    </div>
+  );
+
+  const inspector = node ? (
+    <NodeInspector request={request} node={node} events={events} technical={technical} permissions={me.permissions} userId={me.user.id} onClose={() => setSelected(null)} onChanged={() => void load()}>
+      {node.id === "human-approval" && <ApprovalNodePanel request={request} permissions={me.permissions} userId={me.user.id} mfaEnabled={mfaEnabled} onDone={() => void load()} />}
+      {node.id === "rollback" && <RollbackNodePanel request={request} permissions={me.permissions} mfaEnabled={mfaEnabled} onDone={() => void load()} />}
+    </NodeInspector>
+  ) : (
+    <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">Selecciona un agente del canvas para ver su prompt, reglas, entradas, salidas y logs.</div>
+  );
+
+  const bottom = (
+    <div className="flex h-full flex-col">
+      <nav className="flex items-center gap-1 border-b border-white/10 px-2 py-1.5">
+        <button type="button" onClick={() => setBottomTab("console")} className={cn("rounded-lg px-2.5 py-1 text-xs", bottomTab === "console" ? "bg-white/10" : "text-muted-foreground")}>
+          Consola de eventos
+        </button>
+        <button type="button" onClick={() => setBottomTab("result")} className={cn("rounded-lg px-2.5 py-1 text-xs", bottomTab === "result" ? "bg-white/10" : "text-muted-foreground")}>
+          Resultado
+        </button>
+        {working && bottomTab === "console" && <span className="ml-auto chip py-0.5 text-[11px] text-secondary">En vivo</span>}
+      </nav>
+      <div className="min-h-0 flex-1 overflow-hidden">
+        {bottomTab === "console" ? (
+          <div className="h-full overflow-y-auto p-3">
+            <AgentConsole events={technical ? events : events.filter((e) => e.kind !== "tool")} working={working} />
+          </div>
+        ) : (
+          <ResultPanel request={request} permissions={me.permissions} onChanged={() => void load()} />
+        )}
+      </div>
+    </div>
+  );
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5">
-      <div className="space-y-3">
-        <Link to="/solicitudes" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Solicitudes
-        </Link>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0 space-y-1">
-            <p className="font-mono text-xs uppercase tracking-[0.2em] text-secondary">
-              {request.app?.name ?? request.appId} · pipeline PROD{request.iteration > 1 ? ` · iteración ${request.iteration}` : ""}
-            </p>
-            <h1 className="text-2xl font-semibold sm:text-3xl">{request.title ?? request.prompt.slice(0, 90)}</h1>
-            <p className="text-sm text-muted-foreground">
-              Pedido por {request.createdBy.name ?? request.createdBy.email} · {timeAgo(request.createdAt)}
-              {typeof request.costUsd === "number" ? ` · consumo IA ${request.costUsd.toFixed(2)} USD` : ""}
-            </p>
+    <div className="mx-auto max-w-[1600px] space-y-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <Link to="/solicitudes" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Solicitudes
+          </Link>
+          <h1 className="text-xl font-semibold sm:text-2xl">{request.title ?? request.prompt.slice(0, 90)}</h1>
+          <p className="text-xs text-muted-foreground">
+            {request.app?.name ?? request.appId} · {wf?.legacy ? "pipeline fijo v0" : wf ? `perfil ${wf.profile}${wf.confidence != null ? ` (confianza ${wf.confidence})` : ""}` : "planificando"} · pedido por {request.createdBy.name ?? request.createdBy.email} {timeAgo(request.createdAt)}
+            {request.iteration > 1 ? ` · iteración ${request.iteration}` : ""}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge status={request.status} />
+          <span className={cn("inline-flex items-center gap-1 text-xs", online ? "text-good" : "text-warn")} role="status">
+            {online ? <Wifi className="h-3.5 w-3.5" aria-hidden="true" /> : <WifiOff className="h-3.5 w-3.5" aria-hidden="true" />} {online ? "Conectado" : "Reconectando…"}
+          </span>
+          <div className="flex rounded-xl border border-white/10 p-0.5 text-xs" role="group" aria-label="Nivel de detalle">
+            <button type="button" onClick={() => setTechnical(false)} className={cn("inline-flex items-center gap-1 rounded-lg px-2 py-1", !technical && "bg-white/10")}>
+              <Eye className="h-3.5 w-3.5" aria-hidden="true" /> Funcional
+            </button>
+            <button type="button" onClick={() => setTechnical(true)} className={cn("inline-flex items-center gap-1 rounded-lg px-2 py-1", technical && "bg-white/10")}>
+              <Cpu className="h-3.5 w-3.5" aria-hidden="true" /> Técnica
+            </button>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={request.status} />
-            {request.prUrl && (
-              <a href={request.prUrl} target="_blank" rel="noreferrer" className="btn-ghost px-3 py-1.5 text-xs">
-                <GitPullRequest className="h-3.5 w-3.5" aria-hidden="true" /> PR #{request.prNumber}
-              </a>
-            )}
-            {request.status === "deployed" && request.app && (
-              <a href={request.app.url} target="_blank" rel="noreferrer" className="btn-primary px-3 py-1.5 text-xs">
-                <Rocket className="h-3.5 w-3.5" aria-hidden="true" /> Ver en PROD
-              </a>
-            )}
-          </div>
+          {request.prUrl && (
+            <a href={request.prUrl} target="_blank" rel="noreferrer" className="btn-ghost px-2.5 py-1 text-xs">
+              <GitPullRequest className="h-3.5 w-3.5" aria-hidden="true" /> PR #{request.prNumber}
+            </a>
+          )}
         </div>
       </div>
 
-      <section className="glass p-4">
-        <PipelineStepper status={request.status} stage={request.stage} />
-      </section>
+      {summary && (
+        <section className="glass grid gap-2 p-3 text-sm sm:grid-cols-3" aria-label="Resumen funcional">
+          <p>
+            <span className="block text-xs uppercase tracking-wider text-muted-foreground">Qué se está haciendo</span>
+            {summary.doing}
+          </p>
+          <p>
+            <span className="block text-xs uppercase tracking-wider text-muted-foreground">Qué falta</span>
+            {summary.pending.length ? summary.pending.join(" → ") : "Nada pendiente."}
+          </p>
+          <p className={cn(summary.needsYou && "text-warn")}>
+            <span className="block text-xs uppercase tracking-wider text-muted-foreground">Necesita a una persona</span>
+            {summary.needsYou ?? "No por ahora."}
+          </p>
+        </section>
+      )}
 
-      {request.error && (
-        <div className="glass border-bad/40 p-4 text-sm" role="alert">
+      {request.status === "planned" && (
+        <section className="glass ai-border flex flex-wrap items-center gap-3 p-3">
+          <div className="min-w-0 flex-1 text-sm">
+            <p className="font-medium">Plan listo para ejecutar</p>
+            <p className="text-muted-foreground">
+              Revisa los agentes del canvas y, si quieres, ajusta sus reglas configurables (pestaña Reglas). Al ejecutar, las reglas quedan congeladas y la aprobación del plan queda registrada.
+            </p>
+          </div>
+          {canStart && (
+            <button type="button" className="btn-primary" disabled={starting} onClick={() => void runPlan()}>
+              {starting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Play className="h-4 w-4" aria-hidden="true" />} Ejecutar plan
+            </button>
+          )}
+          {startError && <p className="w-full text-sm text-bad" role="alert">{startError}</p>}
+        </section>
+      )}
+      {request.error && request.status !== "planned" && (
+        <div className="glass border-bad/40 p-3 text-sm" role="alert">
           <p className="font-medium text-bad">{request.error.message}</p>
-          <p className="mt-1 font-mono text-xs text-muted-foreground">{request.error.code}</p>
+          <p className="font-mono text-xs text-muted-foreground">{request.error.code}</p>
         </div>
       )}
 
-      <DecisionPanel request={request} permissions={me.permissions} userId={me.user.id} mfaEnabled={mfaEnabled} onDone={() => void load()} />
-
-      <div className="grid gap-5 xl:grid-cols-5">
-        <div className="space-y-5 xl:col-span-3">
-          {hasPreview && (
-            <section className="space-y-3" aria-labelledby="window-title">
-              <div className="flex items-baseline justify-between gap-2">
-                <h2 id="window-title" className="text-lg font-semibold">
-                  Ventana de la aplicación
-                </h2>
-                <span className="text-xs text-muted-foreground">{request.status === "deployed" ? "Versión desplegada" : "Vista previa privada con los cambios"}</span>
-              </div>
-              <AppWindow requestId={request.requestId} routes={routes} label={request.status === "deployed" ? "en PROD" : "vista previa"} />
-            </section>
-          )}
-
-          <section className="glass p-5" aria-labelledby="console-title">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 id="console-title" className="text-lg font-semibold">
-                Consola del agente
-              </h2>
-              {working && <span className="chip text-secondary">En vivo</span>}
-            </div>
-            <AgentConsole events={events} working={working} />
-          </section>
+      {wide ? (
+        <div className="glass h-[calc(100vh-15rem)] min-h-[620px] overflow-hidden p-0">
+          <PanelGroup direction="vertical" autoSaveId="nadf-studio-v">
+            <Panel defaultSize={66} minSize={30}>
+              <PanelGroup direction="horizontal" autoSaveId="nadf-studio-h">
+                <Panel defaultSize={64} minSize={35}>
+                  <div className="relative h-full">
+                    {canvas}
+                    <div className="absolute right-2 top-2 flex gap-1">
+                      <button type="button" className="btn-ghost bg-background/70 px-2 py-1" aria-label={inspectorOpen ? "Contraer inspector" : "Expandir inspector"} onClick={() => toggle(inspectorRef, inspectorOpen)}>
+                        {inspectorOpen ? <PanelRightClose className="h-4 w-4" aria-hidden="true" /> : <PanelRightOpen className="h-4 w-4" aria-hidden="true" />}
+                      </button>
+                      <button type="button" className="btn-ghost bg-background/70 px-2 py-1" aria-label={bottomOpen ? "Contraer consola" : "Expandir consola"} onClick={() => toggle(bottomRef, bottomOpen)}>
+                        {bottomOpen ? <PanelBottomClose className="h-4 w-4" aria-hidden="true" /> : <PanelBottomOpen className="h-4 w-4" aria-hidden="true" />}
+                      </button>
+                    </div>
+                  </div>
+                </Panel>
+                <PanelResizeHandle className="w-1.5 bg-white/5 transition hover:bg-secondary/40" />
+                <Panel ref={inspectorRef} defaultSize={36} minSize={22} collapsible collapsedSize={0} onCollapse={() => setInspectorOpen(false)} onExpand={() => setInspectorOpen(true)}>
+                  <div className="h-full border-l border-white/10 bg-background/40">{inspector}</div>
+                </Panel>
+              </PanelGroup>
+            </Panel>
+            <PanelResizeHandle className="h-1.5 bg-white/5 transition hover:bg-secondary/40" />
+            <Panel ref={bottomRef} defaultSize={34} minSize={14} collapsible collapsedSize={0} onCollapse={() => setBottomOpen(false)} onExpand={() => setBottomOpen(true)}>
+              <div className="h-full border-t border-white/10 bg-background/40">{bottom}</div>
+            </Panel>
+          </PanelGroup>
         </div>
-
-        <div className="space-y-5 xl:col-span-2">
-          <section className="glass space-y-3 p-5" aria-labelledby="ask-title">
-            <h2 id="ask-title" className="flex items-center gap-2 text-lg font-semibold">
-              <MessageSquareQuote className="h-5 w-5 text-secondary" aria-hidden="true" /> Lo que se pidió
-            </h2>
-            <p className="whitespace-pre-wrap text-sm text-foreground/90">{request.prompt}</p>
-            {request.feedback?.map((f) => (
-              <p key={f.at} className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm">
-                <span className="text-muted-foreground">{f.by.name ?? f.by.email}: </span>
-                {f.text}
-              </p>
-            ))}
-          </section>
-
-          {request.report && (
-            <section className="glass p-5" aria-labelledby="report-title">
-              <h2 id="report-title" className="mb-3 text-lg font-semibold">
-                Informe del agente
-              </h2>
-              <ReportCard report={request.report} />
-            </section>
-          )}
-
-          <section className="glass space-y-4 p-5" aria-labelledby="tests-title">
-            <h2 id="tests-title" className="text-lg font-semibold">
-              Pruebas
-            </h2>
-            <TestList tests={request.tests} />
-            <Screenshots shots={request.screenshots} />
-          </section>
-
-          {request.deployment && (request.deployment.smoke?.length || request.deployment.screenshots.length) ? (
-            <section className="glass space-y-4 p-5" aria-labelledby="deploy-title">
-              <h2 id="deploy-title" className="text-lg font-semibold">
-                Verificación en PROD
-              </h2>
-              <TestList tests={request.deployment.smoke} />
-              <Screenshots shots={request.deployment.screenshots} />
-              {request.app && (
-                <a href={request.app.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-                  {request.app.url} <ExternalLink className="h-3 w-3" aria-hidden="true" />
-                </a>
-              )}
-            </section>
-          ) : null}
-
-          {request.diffStat && (
-            <details className="glass p-5 text-sm">
-              <summary className="cursor-pointer select-none font-medium">Resumen técnico del cambio</summary>
-              <pre className="mt-3 overflow-x-auto whitespace-pre font-mono text-xs text-muted-foreground">{request.diffStat}</pre>
-            </details>
-          )}
+      ) : (
+        <div className="space-y-3">
+          <div className="glass h-[520px] overflow-hidden p-0">{canvas}</div>
+          {node && <div className="glass max-h-[640px] overflow-hidden p-0">{inspector}</div>}
+          <div className="glass h-[560px] overflow-hidden p-0">{bottom}</div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
