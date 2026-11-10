@@ -58,6 +58,7 @@ export function getMe(): Promise<Me> {
 // ---------- Pipeline PROD ----------
 
 export type RequestStatus =
+  | "continuing"
   | "stopped"
   | "cancelled"
   | "planning"
@@ -235,6 +236,9 @@ export interface RequestDetail {
   classification?: { resumen?: string; criterios_aceptacion?: string[]; preguntas?: string[]; riesgo?: string } | null;
   planApproval?: { by: Actor; at: string };
   stopped?: { by: Actor; at: string; reason?: string; previousStatus: RequestStatus };
+  parked?: { code: string; nodeId: string; at: string } | null;
+  riskAcceptance?: { by: Actor; at: string; justification: string; code: string; nodeId: string } | null;
+  scopeOverride?: "web_only";
   cancelled?: { by: Actor; at: string; reason?: string };
   flowTemplate?: { id: string; name: string; version: number; agents: string[] } | null;
   attachments?: { key: string; name: string; contentType: string; size: number; kind: "image" | "text" | "word" | "pdf"; url: string }[];
@@ -283,7 +287,7 @@ export const getRequest = (id: string, after?: string) =>
   apiGet<{ request: RequestDetail; events: AgentEvent[] }>(`/api/v1/portal/requests/${id}${after ? `?after=${encodeURIComponent(after)}` : ""}`);
 export const createRequest = (prompt: string, appId?: string, flowId?: string, attachments: { key: string; name: string; contentType: string }[] = []) =>
   apiPost<{ request: RequestSummary }>("/api/v1/portal/requests", { prompt, appId, flowId: flowId || undefined, attachments }).then((r) => r.request);
-export type DecisionKind = "approve" | "reject" | "changes" | "approve_rollback" | "reject_rollback";
+export type DecisionKind = "approve" | "reject" | "changes" | "approve_rollback" | "reject_rollback" | "accept_risk" | "web_only";
 export const updateRules = (id: string, nodeId: string, configurable: string[]) =>
   apiPut<{ rules: Rules }>(`/api/v1/portal/requests/${id}/rules`, { nodeId, configurable }).then((r) => r.rules);
 export const startPlan = (id: string) => apiPost<{ status: RequestStatus }>(`/api/v1/portal/requests/${id}/start`);

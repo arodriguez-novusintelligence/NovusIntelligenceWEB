@@ -7,6 +7,7 @@ import { ApiError, decide, getRequest, startPlan, type AgentEvent, type Me, type
 import type { NodeDecision } from "@/components/studio/AgentNode";
 import { AgentConsole } from "@/components/pipeline/AgentConsole";
 import { StatusBadge } from "@/components/pipeline/StatusBadge";
+import { BlockedPanel } from "@/components/pipeline/BlockedPanel";
 import { ApprovalNodePanel, RollbackNodePanel } from "@/components/studio/ApprovalNodePanel";
 import { NodeInspector } from "@/components/studio/NodeInspector";
 import { ResultPanel } from "@/components/studio/ResultPanel";
@@ -311,6 +312,12 @@ export function RequestDetailPage({ me, mfaEnabled }: { me: Me; mfaEnabled: bool
         </section>
       )}
       {controlError && <p className="text-sm text-bad" role="alert">{controlError}</p>}
+      {request.status === "blocked" && <BlockedPanel request={request} permissions={me.permissions} userId={me.user.id} mfaEnabled={mfaEnabled} onDone={() => void load()} />}
+      {request.riskAcceptance && (
+        <p className="glass border-warn/40 p-3 text-sm">
+          <span className="text-warn">Riesgo aceptado</span> por {request.riskAcceptance.by.name ?? request.riskAcceptance.by.email} el {new Date(request.riskAcceptance.at).toLocaleString("es-CO")}: {request.riskAcceptance.justification}
+        </p>
+      )}
       {request.status === "stopped" && request.stopped && (
         <p className="glass p-3 text-sm text-warn">
           Detenida por {request.stopped.by.name ?? request.stopped.by.email} el {new Date(request.stopped.at).toLocaleString("es-CO")}. Pulsa «Reanudar» para continuar.

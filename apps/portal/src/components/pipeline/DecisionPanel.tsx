@@ -30,7 +30,8 @@ export function DecisionPanel({
   const approver = permissions.includes("approvals.decide");
   const owner = permissions.includes("requests.create") && request.createdBy.id === userId;
   const reviewing = request.status === "awaiting_approval";
-  const retryable = ["no_changes", "blocked", "failed", "rolled_back"].includes(request.status);
+  // Los bloqueos tienen su propio panel (BlockedPanel) con opciones según el tipo.
+  const retryable = ["no_changes", "failed", "rolled_back"].includes(request.status);
   if (!(reviewing || retryable) || !(approver || owner)) return null;
 
   async function submit(decision: "approve" | "reject" | "changes") {

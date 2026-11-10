@@ -20,12 +20,13 @@ export function stepIndex(stage: string | null | undefined, status: RequestStatu
   return idx >= 0 ? idx : 0;
 }
 
-export const ACTIVE: RequestStatus[] = ["planning", "queued", "developing", "approved", "deploying", "rollback_approved", "rolling_back"];
+export const ACTIVE: RequestStatus[] = ["continuing", "planning", "queued", "developing", "approved", "deploying", "rollback_approved", "rolling_back"];
 export const isActive = (status: RequestStatus) => ACTIVE.includes(status);
 
 export const STATUS: Record<RequestStatus, { label: string; tone: "info" | "ai" | "warn" | "good" | "bad" | "muted" }> = {
   planning: { label: "Planificando", tone: "ai" },
   stopped: { label: "Detenida", tone: "warn" },
+  continuing: { label: "Continuando (riesgo aceptado)", tone: "ai" },
   cancelled: { label: "Cancelada", tone: "muted" },
   planned: { label: "Plan listo", tone: "warn" },
   rollback_requested: { label: "Rollback solicitado", tone: "warn" },
@@ -39,7 +40,7 @@ export const STATUS: Record<RequestStatus, { label: string; tone: "info" | "ai" 
   deployed: { label: "En PROD · verificado", tone: "good" },
   rejected: { label: "Rechazado", tone: "muted" },
   no_changes: { label: "Sin cambios", tone: "warn" },
-  blocked: { label: "Bloqueado por seguridad", tone: "bad" },
+  blocked: { label: "Bloqueada · requiere decisión", tone: "bad" },
   failed: { label: "Falló", tone: "bad" },
   rolled_back: { label: "Revertido", tone: "bad" },
 };
