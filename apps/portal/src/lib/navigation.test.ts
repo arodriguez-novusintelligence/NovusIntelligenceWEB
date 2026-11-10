@@ -39,10 +39,10 @@ describe("visibleNav", () => {
 
   it("habilita solo lo que corresponde a la fase actual", () => {
     const fase0 = visibleNav(ADMIN, 0).filter((i) => i.available).map((i) => i.id);
-    expect(fase0).toEqual(["command", "security"]);
+    expect(fase0).toEqual(["command", "requests", "approvals", "security"]);
     const fase1 = visibleNav(ADMIN, 1).filter((i) => i.available).map((i) => i.id);
     expect(fase1).toContain("team");
-    expect(fase1).not.toContain("approvals");
+    expect(visibleNav(ADMIN, 0).find((i) => i.id === "team")?.available).toBe(false);
   });
 });
 

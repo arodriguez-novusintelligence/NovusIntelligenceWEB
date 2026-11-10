@@ -34,8 +34,9 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { id: "command", label: "Centro de mando", path: "/", icon: "command", phase: 0, anyOf: [] },
-  { id: "requests", label: "Solicitudes", path: "/solicitudes", icon: "requests", phase: 2, anyOf: ["requests.create", "reports.view", "reports.viewOwn"] },
-  { id: "approvals", label: "Aprobaciones", path: "/aprobaciones", icon: "approvals", phase: 4, anyOf: ["approvals.decide"] },
+  // Pipeline PROD con revisión: adelantado a la fase 0 por decisión del 2026-11-10.
+  { id: "requests", label: "Solicitudes", path: "/solicitudes", icon: "requests", phase: 0, anyOf: ["requests.create", "reports.view", "reports.viewOwn"] },
+  { id: "approvals", label: "Aprobaciones", path: "/aprobaciones", icon: "approvals", phase: 0, anyOf: ["approvals.decide"] },
   { id: "connectors", label: "Conectores", path: "/conectores", icon: "connectors", phase: 1, anyOf: ["connectors.manage"] },
   { id: "agents", label: "Agentes", path: "/agentes", icon: "agents", phase: 1, anyOf: ["agents.manage"] },
   { id: "team", label: "Equipo", path: "/equipo", icon: "team", phase: 1, anyOf: ["users.manage"] },
@@ -65,9 +66,10 @@ export const ROLE_LABELS: Record<string, string> = {
 /** Sugerencias para la barra de mando según lo que el usuario puede hacer. */
 export function commandSuggestions(permissions: readonly Permission[]): string[] {
   const out: string[] = [];
-  if (permissions.includes("requests.create")) out.push("Quiero que el checkout muestre el total con IVA");
-  if (permissions.includes("connectors.manage")) out.push("Conecta nuestro GitHub");
-  if (permissions.includes("users.manage")) out.push("Invita a María como aprobadora");
+  if (permissions.includes("requests.create")) {
+    out.push("En la página de un evento, agrega un botón para compartirlo por WhatsApp");
+    out.push("Cambia el texto del botón «Comprar» por «Comprar entradas»");
+  }
   if (permissions.includes("approvals.decide")) out.push("¿Qué está pendiente de aprobar?");
   if (out.length === 0) out.push("¿Qué solicitudes están en curso?");
   return out.slice(0, 3);

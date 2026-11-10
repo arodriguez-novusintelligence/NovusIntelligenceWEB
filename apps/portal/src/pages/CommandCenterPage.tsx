@@ -1,6 +1,9 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Inbox, Plug, ShieldAlert, ShieldCheck } from "lucide-react";
-import type { Me } from "@/api/client";
+import { ChevronRight, Inbox, Plug, ShieldAlert, ShieldCheck } from "lucide-react";
+import { listRequests, type Me, type RequestSummary } from "@/api/client";
+import { StatusBadge } from "@/components/pipeline/StatusBadge";
+import { activeAgent, isActive, timeAgo } from "@/lib/pipeline";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { CommandBar } from "@/components/CommandBar";
 import { cn } from "@/lib/cn";
@@ -26,6 +29,31 @@ function firstName(me: Me): string {
 
 export function CommandCenterPage({ me, mfaEnabled }: { me: Me; mfaEnabled: boolean }) {
   const needsMfa = me.user.mfaRequired && !mfaEnabled;
+  const [requests, setRequests] = useState<RequestSummary[]>([]);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    let stopped = false;
+    const tick = async () => {
+      const list = await listRequests().catch(() => [] as RequestSummary[]);
+      if (stopped) return;
+      setRequests(list);
+      timer = setTimeout(tick, list.some((r) => isActive(r.status)) ? 4000 : 20000);
+    };
+    void tick();
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, []);
+
+  const running = requests.filter((r) => isActive(r.status));
+  const busyAgents = new Map(running.map((r) => [activeAgent(r.stage), r.title] as const));
+  const waiting = requests.filter(
+    (r) =>
+      (r.status === "awaiting_approval" && me.permissions.includes("approvals.decide")) ||
+      (["no_changes", "blocked", "failed", "rolled_back"].includes(r.status) && r.createdBy.id === me.user.id),
+  );
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -58,11 +86,17 @@ export function CommandCenterPage({ me, mfaEnabled }: { me: Me; mfaEnabled: bool
             <h2 id="agents-title" className="text-lg font-semibold">
               Agentes NADF
             </h2>
-            <span className="chip">Sin solicitudes en curso</span>
+            <span className="chip">{running.length ? `${running.length} en curso` : "Sin solicitudes en curso"}</span>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {AGENTS.map((a) => (
-              <AgentAvatar key={a.name} name={a.name} initials={a.initials} state="idle" />
+              <AgentAvatar
+                key={a.name}
+                name={a.name}
+                initials={a.initials}
+                state={busyAgents.has(a.name) ? (a.name === "Desarrollador" ? "thinking" : "running") : "idle"}
+                detail={busyAgents.get(a.name) ?? undefined}
+              />
             ))}
           </div>
         </section>
@@ -71,10 +105,27 @@ export function CommandCenterPage({ me, mfaEnabled }: { me: Me; mfaEnabled: bool
           <h2 id="waiting-title" className="mb-4 text-lg font-semibold">
             Espera por ti
           </h2>
-          <div className="flex items-start gap-3 text-sm text-muted-foreground">
-            <Inbox className="h-5 w-5 shrink-0" aria-hidden="true" />
-            <p>Nada pendiente. Aquí aparecerán las preguntas del agente y las aprobaciones que te correspondan.</p>
-          </div>
+          {waiting.length === 0 ? (
+            <div className="flex items-start gap-3 text-sm text-muted-foreground">
+              <Inbox className="h-5 w-5 shrink-0" aria-hidden="true" />
+              <p>Nada pendiente. Aquí aparecerán las aprobaciones y las preguntas del agente que te correspondan.</p>
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {waiting.slice(0, 5).map((r) => (
+                <li key={r.requestId}>
+                  <Link to={`/solicitudes/${r.requestId}`} className="flex items-center gap-2 rounded-xl border border-white/10 p-3 transition hover:border-white/25">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm">{r.title}</p>
+                      <p className="text-xs text-muted-foreground">{timeAgo(r.updatedAt)}</p>
+                    </div>
+                    <StatusBadge status={r.status} />
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         <section className="glass p-5" aria-labelledby="access-title">

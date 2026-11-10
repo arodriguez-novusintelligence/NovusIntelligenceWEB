@@ -7,6 +7,8 @@ import { NeuralBackdrop } from "@/components/NeuralBackdrop";
 import { missingConfig } from "@/config";
 import { CommandCenterPage } from "@/pages/CommandCenterPage";
 import { LoginPage } from "@/pages/LoginPage";
+import { RequestDetailPage } from "@/pages/RequestDetailPage";
+import { RequestsPage } from "@/pages/RequestsPage";
 import { SecurityPage } from "@/pages/SecurityPage";
 
 function Splash({ children }: { children: React.ReactNode }) {
@@ -59,6 +61,9 @@ function Gate() {
     <AppShell me={me}>
       <Routes>
         <Route path="/" element={<CommandCenterPage me={me} mfaEnabled={mfaEnabled} />} />
+        <Route path="/solicitudes" element={<RequestsPage me={me} />} />
+        <Route path="/solicitudes/:id" element={<RequestDetailPage me={me} mfaEnabled={mfaEnabled} />} />
+        <Route path="/aprobaciones" element={<RequestsPage me={me} onlyApprovals />} />
         <Route path="/seguridad" element={<SecurityPage me={me} mfaEnabled={mfaEnabled} />} />
         <Route
           path="*"
