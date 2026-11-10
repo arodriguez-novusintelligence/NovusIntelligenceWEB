@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Identidad Novus (misma base que la web corporativa) */
+    --background: 264 40% 8%;
+    --foreground: 220 20% 96%;
+    --primary: 220 85% 55%;
+    --primary-foreground: 220 20% 98%;
+    --secondary: 295 70% 55%;
+    --secondary-foreground: 220 20% 96%;
+    --muted: 265 25% 18%;
+    --muted-foreground: 220 15% 68%;
+    --border: 265 20% 24%;
+    --card: 265 30% 12%;
+    --good: 152 60% 50%;
+    --warn: 38 92% 58%;
+    --bad: 0 80% 66%;
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .glass {
+    @apply rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl;
+    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.06), 0 12px 40px hsl(264 60% 3% / 0.45);
+  }
+
+  .glass-strong {
+    @apply rounded-2xl border border-white/10 bg-[hsl(265_30%_11%/0.82)] backdrop-blur-xl;
+  }
+
+  .ai-gradient-text {
+    background: linear-gradient(100deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .ai-border {
+    position: relative;
+  }
+
+  .ai-border::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(120deg, hsl(var(--primary) / 0.9), hsl(var(--secondary) / 0.9), hsl(var(--primary) / 0.2));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .field {
+    @apply w-full rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/70 transition focus:border-primary/70 focus:bg-white/[0.07] focus:outline-none;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-secondary px-5 py-3 text-sm font-semibold text-white shadow-glow transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-foreground/90 transition hover:border-white/25 hover:bg-white/[0.05];
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs font-medium text-foreground/85;
+  }
+}

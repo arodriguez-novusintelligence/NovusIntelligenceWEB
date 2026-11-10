@@ -3,11 +3,17 @@
   "private": true,
   "version": "0.2.0",
   "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "portal:dev": "npm run dev --workspace=@novus/nadf-portal",
+    "portal:build": "npm run build --workspace=@novus/nadf-portal",
+    "portal:test": "npm run test --workspace=@novus/nadf-portal"
   },
   "dependencies": {
     "clsx": "^2.1.1",
