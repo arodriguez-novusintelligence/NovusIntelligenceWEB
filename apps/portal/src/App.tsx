@@ -9,6 +9,11 @@ import { CommandCenterPage } from "@/pages/CommandCenterPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { RequestDetailPage } from "@/pages/RequestDetailPage";
 import { RequestsPage } from "@/pages/RequestsPage";
+import { AgentsPage } from "@/pages/AgentsPage";
+import { ConnectorsPage } from "@/pages/ConnectorsPage";
+import { FlowsPage } from "@/pages/FlowsPage";
+import { GovernancePage } from "@/pages/GovernancePage";
+import { TeamPage } from "@/pages/TeamPage";
 import { SecurityPage } from "@/pages/SecurityPage";
 
 function Splash({ children }: { children: React.ReactNode }) {
@@ -64,6 +69,11 @@ function Gate() {
         <Route path="/solicitudes" element={<RequestsPage me={me} />} />
         <Route path="/solicitudes/:id" element={<RequestDetailPage me={me} mfaEnabled={mfaEnabled} />} />
         <Route path="/aprobaciones" element={<RequestsPage me={me} onlyApprovals />} />
+        <Route path="/flujos" element={<FlowsPage me={me} />} />
+        <Route path="/agentes" element={<AgentsPage me={me} />} />
+        <Route path="/conectores" element={<ConnectorsPage me={me} />} />
+        <Route path="/equipo" element={<TeamPage me={me} />} />
+        <Route path="/gobierno" element={<GovernancePage me={me} />} />
         <Route path="/seguridad" element={<SecurityPage me={me} mfaEnabled={mfaEnabled} />} />
         <Route
           path="*"

@@ -6,6 +6,8 @@ export type Permission =
   | "apps.manage"
   | "connectors.manage"
   | "agents.manage"
+  | "agents.define"
+  | "workflows.manage"
   | "requests.create"
   | "requests.submit"
   | "reports.view"
@@ -19,7 +21,7 @@ export type Permission =
 /** Fase de implementación actual del plan (documento de diseño NADF). */
 export const CURRENT_PHASE = 0;
 
-export type NavIcon = "command" | "requests" | "approvals" | "connectors" | "agents" | "team" | "governance" | "security";
+export type NavIcon = "command" | "requests" | "approvals" | "flows" | "connectors" | "agents" | "team" | "governance" | "security";
 
 export interface NavItem {
   id: string;
@@ -37,10 +39,11 @@ export const NAV_ITEMS: NavItem[] = [
   // Pipeline PROD con revisión: adelantado a la fase 0 por decisión del 2026-11-10.
   { id: "requests", label: "Solicitudes", path: "/solicitudes", icon: "requests", phase: 0, anyOf: ["requests.create", "reports.view", "reports.viewOwn"] },
   { id: "approvals", label: "Aprobaciones", path: "/aprobaciones", icon: "approvals", phase: 0, anyOf: ["approvals.decide"] },
-  { id: "connectors", label: "Conectores", path: "/conectores", icon: "connectors", phase: 1, anyOf: ["connectors.manage"] },
-  { id: "agents", label: "Agentes", path: "/agentes", icon: "agents", phase: 1, anyOf: ["agents.manage"] },
-  { id: "team", label: "Equipo", path: "/equipo", icon: "team", phase: 1, anyOf: ["users.manage"] },
-  { id: "governance", label: "Gobierno", path: "/gobierno", icon: "governance", phase: 1, anyOf: ["audit.view"] },
+  { id: "flows", label: "Flujos", path: "/flujos", icon: "flows", phase: 0, anyOf: ["workflows.manage", "requests.create", "agents.manage"] },
+  { id: "connectors", label: "Conectores", path: "/conectores", icon: "connectors", phase: 0, anyOf: ["connectors.manage"] },
+  { id: "agents", label: "Agentes", path: "/agentes", icon: "agents", phase: 0, anyOf: ["agents.manage", "requests.create", "reports.view"] },
+  { id: "team", label: "Equipo", path: "/equipo", icon: "team", phase: 0, anyOf: ["users.manage"] },
+  { id: "governance", label: "Gobierno", path: "/gobierno", icon: "governance", phase: 0, anyOf: ["audit.view", "usage.view"] },
   { id: "security", label: "Seguridad", path: "/seguridad", icon: "security", phase: 0, anyOf: [] },
 ];
 
@@ -60,6 +63,7 @@ export const ROLE_LABELS: Record<string, string> = {
   aprobador: "Aprobador",
   funcional: "Funcional",
   desarrollador: "Desarrollador",
+  arquitecto: "Arquitecto",
   observador: "Observador",
 };
 

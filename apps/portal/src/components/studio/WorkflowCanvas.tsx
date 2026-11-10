@@ -3,7 +3,7 @@ import { Background, BackgroundVariant, Controls, MarkerType, MiniMap, ReactFlow
 import "@xyflow/react/dist/style.css";
 import type { NodeState, Workflow } from "@/api/client";
 import { focusNodes, layoutWorkflow, statusOf } from "@/lib/studio";
-import { AgentNode, type AgentNodeData } from "./AgentNode";
+import { AgentNode, type AgentNodeData, type NodeDecision } from "./AgentNode";
 
 const nodeTypes = { agent: AgentNode };
 
@@ -13,10 +13,12 @@ interface Props {
   selected: string | null;
   technical: boolean;
   onSelect: (id: string) => void;
+  /** Decisiones disponibles para el usuario, por id de nodo (aprobación, rollback). */
+  decisions?: Record<string, NodeDecision | null>;
 }
 
 /** Canvas del workflow REAL: nodos y conexiones salen del plan persistido por el orquestador. */
-function Canvas({ workflow, nodeState, selected, technical, onSelect }: Props) {
+function Canvas({ workflow, nodeState, selected, technical, onSelect, decisions }: Props) {
   const flow = useReactFlow();
   const box = useRef<HTMLDivElement>(null);
   const pos = useMemo(() => layoutWorkflow(workflow), [workflow]);
@@ -42,12 +44,12 @@ function Canvas({ workflow, nodeState, selected, technical, onSelect }: Props) {
         id: n.id,
         type: "agent",
         position: { x: pos[n.id]?.x ?? 0, y: pos[n.id]?.y ?? 0 },
-        data: { node: n, state: nodeState[n.id], status: statusOf(n, nodeState[n.id]), selected: selected === n.id, technical } satisfies AgentNodeData,
+        data: { node: n, state: nodeState[n.id], status: statusOf(n, nodeState[n.id]), selected: selected === n.id, technical, decision: decisions?.[n.id] ?? null } satisfies AgentNodeData,
         draggable: false,
         connectable: false,
         ariaLabel: `${n.label}: ${statusOf(n, nodeState[n.id])}`,
       })),
-    [workflow, pos, nodeState, selected, technical],
+    [workflow, pos, nodeState, selected, technical, decisions],
   );
 
   const edges: Edge[] = useMemo(

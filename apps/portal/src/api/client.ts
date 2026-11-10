@@ -19,7 +19,7 @@ async function token(): Promise<string> {
   return t;
 }
 
-async function call<T>(method: "GET" | "POST" | "PUT", path: string, body?: unknown): Promise<T> {
+async function call<T>(method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE", path: string, body?: unknown): Promise<T> {
   const session = await fetchAuthSession();
   const token = session.tokens?.idToken?.toString();
   if (!token) {
@@ -40,6 +40,7 @@ async function call<T>(method: "GET" | "POST" | "PUT", path: string, body?: unkn
 export const apiGet = <T,>(path: string) => call<T>("GET", path);
 export const apiPost = <T,>(path: string, body?: unknown) => call<T>("POST", path, body ?? {});
 export const apiPut = <T,>(path: string, body?: unknown) => call<T>("PUT", path, body ?? {});
+export const apiSend = <T,>(method: "PATCH" | "DELETE", path: string, body?: unknown) => call<T>(method, path, body);
 
 export interface Me {
   user: { id: string; email: string; name: string | null; roles: string[]; mfaRequired: boolean };
@@ -54,6 +55,8 @@ export function getMe(): Promise<Me> {
 // ---------- Pipeline PROD ----------
 
 export type RequestStatus =
+  | "stopped"
+  | "cancelled"
   | "planning"
   | "planned"
   | "rollback_requested"
@@ -226,6 +229,9 @@ export interface RequestDetail {
   rules?: Rules;
   classification?: { resumen?: string; criterios_aceptacion?: string[]; preguntas?: string[]; riesgo?: string } | null;
   planApproval?: { by: Actor; at: string };
+  stopped?: { by: Actor; at: string; reason?: string; previousStatus: RequestStatus };
+  cancelled?: { by: Actor; at: string; reason?: string };
+  flowTemplate?: { id: string; name: string; version: number; agents: string[] } | null;
   rollback?: { requestedBy: Actor; requestedAt: string; reason: string; risks: string[]; approvedBy?: Actor; approvedAt?: string; finishedAt?: string; revertPrUrl?: string | null; smoke?: TestResult[] } | null;
   headSha?: string;
   changedFiles?: string[];
@@ -269,8 +275,8 @@ export const listApps = () => apiGet<{ apps: ConnectedApp[] }>("/api/v1/portal/a
 export const listRequests = () => apiGet<{ requests: RequestSummary[] }>("/api/v1/portal/requests").then((r) => r.requests);
 export const getRequest = (id: string, after?: string) =>
   apiGet<{ request: RequestDetail; events: AgentEvent[] }>(`/api/v1/portal/requests/${id}${after ? `?after=${encodeURIComponent(after)}` : ""}`);
-export const createRequest = (prompt: string, appId?: string) =>
-  apiPost<{ request: RequestSummary }>("/api/v1/portal/requests", { prompt, appId }).then((r) => r.request);
+export const createRequest = (prompt: string, appId?: string, flowId?: string) =>
+  apiPost<{ request: RequestSummary }>("/api/v1/portal/requests", { prompt, appId, flowId: flowId || undefined }).then((r) => r.request);
 export type DecisionKind = "approve" | "reject" | "changes" | "approve_rollback" | "reject_rollback";
 export const updateRules = (id: string, nodeId: string, configurable: string[]) =>
   apiPut<{ rules: Rules }>(`/api/v1/portal/requests/${id}/rules`, { nodeId, configurable }).then((r) => r.rules);

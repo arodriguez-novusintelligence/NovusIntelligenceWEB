@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowUp, Loader2, Sparkles } from "lucide-react";
+import { listFlows, type FlowTemplate } from "@/api/admin";
 import { ApiError, createRequest, listApps, type ConnectedApp } from "@/api/client";
 import { NadfMark } from "./NadfMark";
 
@@ -15,6 +16,8 @@ export function CommandBar({ suggestions }: { suggestions: string[] }) {
   const [appId, setAppId] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [flows, setFlows] = useState<FlowTemplate[]>([]);
+  const [flowId, setFlowId] = useState("");
 
   useEffect(() => {
     listApps()
@@ -23,6 +26,9 @@ export function CommandBar({ suggestions }: { suggestions: string[] }) {
         setAppId(list[0]?.id ?? "");
       })
       .catch(() => setApps([]));
+    listFlows()
+      .then((r) => setFlows(r.flows))
+      .catch(() => setFlows([]));
   }, []);
 
   async function submit(event: FormEvent) {
@@ -40,7 +46,7 @@ export function CommandBar({ suggestions }: { suggestions: string[] }) {
     setBusy(true);
     setMessage(null);
     try {
-      const created = await createRequest(text, appId || undefined);
+      const created = await createRequest(text, appId || undefined, flowId || undefined);
       navigate(`/solicitudes/${created.requestId}`);
     } catch (e) {
       setMessage(e instanceof ApiError ? e.message : "No pude enviar tu solicitud. Intenta de nuevo.");
@@ -87,6 +93,19 @@ export function CommandBar({ suggestions }: { suggestions: string[] }) {
 
       <div className="flex flex-wrap items-center gap-2">
         {apps && apps.length === 1 && <span className="text-xs text-muted-foreground">Se aplicará en {apps[0].name} · pipeline PROD con revisión</span>}
+        {flows.length > 0 && (
+          <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            Flujo
+            <select value={flowId} onChange={(e) => setFlowId(e.target.value)} className="rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1 text-xs text-foreground" aria-label="Flujo de agentes">
+              <option value="">Automático (NADF decide)</option>
+              {flows.map((f) => (
+                <option key={f.flowId} value={f.flowId}>
+                  {f.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {suggestions.map((s) => (
           <button key={s} type="button" onClick={() => setValue(s)} className="chip transition hover:border-primary/50 hover:text-foreground">
             {s}

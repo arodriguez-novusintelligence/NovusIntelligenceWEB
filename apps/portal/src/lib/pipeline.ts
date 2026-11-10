@@ -25,6 +25,8 @@ export const isActive = (status: RequestStatus) => ACTIVE.includes(status);
 
 export const STATUS: Record<RequestStatus, { label: string; tone: "info" | "ai" | "warn" | "good" | "bad" | "muted" }> = {
   planning: { label: "Planificando", tone: "ai" },
+  stopped: { label: "Detenida", tone: "warn" },
+  cancelled: { label: "Cancelada", tone: "muted" },
   planned: { label: "Plan listo", tone: "warn" },
   rollback_requested: { label: "Rollback solicitado", tone: "warn" },
   rollback_approved: { label: "Rollback aprobado", tone: "ai" },

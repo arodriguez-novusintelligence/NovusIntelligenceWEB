@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Panel, PanelGroup, PanelResizeHandle, type ImperativePanelHandle } from "react-resizable-panels";
-import { ArrowLeft, Cpu, Eye, GitPullRequest, Loader2, PanelBottomClose, PanelBottomOpen, PanelRightClose, PanelRightOpen, Play, Wifi, WifiOff } from "lucide-react";
-import { ApiError, getRequest, startPlan, type AgentEvent, type Me, type RequestDetail } from "@/api/client";
+import { ArrowLeft, Ban, Cpu, Eye, GitPullRequest, Loader2, PanelBottomClose, PanelBottomOpen, PanelRightClose, PanelRightOpen, Pause, Play, RotateCw, Wifi, WifiOff } from "lucide-react";
+import { cancelRequest, resumeRequest, stopRequest } from "@/api/admin";
+import { ApiError, decide, getRequest, startPlan, type AgentEvent, type Me, type RequestDetail } from "@/api/client";
+import type { NodeDecision } from "@/components/studio/AgentNode";
 import { AgentConsole } from "@/components/pipeline/AgentConsole";
 import { StatusBadge } from "@/components/pipeline/StatusBadge";
 import { ApprovalNodePanel, RollbackNodePanel } from "@/components/studio/ApprovalNodePanel";
@@ -108,6 +110,43 @@ export function RequestDetailPage({ me, mfaEnabled }: { me: Me; mfaEnabled: bool
   }, [request, selected]);
 
   const summary = useMemo(() => (request ? functionalSummary(request) : null), [request]);
+  const [control, setControl] = useState<"stop" | "cancel" | null>(null);
+  const [controlBusy, setControlBusy] = useState(false);
+  const [controlError, setControlError] = useState<string | null>(null);
+
+  // Aprobar / Denegar dentro del nodo (backend real; aprobar exige MFA y el permiso de aprobador).
+  const decisions = useMemo<Record<string, NodeDecision | null>>(() => {
+    if (!request || !me.permissions.includes("approvals.decide")) return {};
+    const after = async (fn: Promise<unknown>) => {
+      try {
+        await fn;
+      } catch (e) {
+        throw new Error(e instanceof ApiError ? e.message : "No se pudo registrar la decisión.");
+      }
+      await load();
+    };
+    const noMfa = mfaEnabled ? null : "Activa la verificación en dos pasos para aprobar.";
+    const out: Record<string, NodeDecision | null> = {};
+    if (request.status === "awaiting_approval") {
+      out["human-approval"] = {
+        approveLabel: "Aprobar",
+        confirmText: `¿Desplegar en PROD (${request.app?.url ?? "producción"})?`,
+        disabledReason: noMfa,
+        onApprove: () => after(decide(request.requestId, "approve")),
+        onDeny: () => after(decide(request.requestId, "reject")),
+      };
+    }
+    if (request.status === "rollback_requested") {
+      out.rollback = {
+        approveLabel: "Aprobar rollback",
+        confirmText: "¿Restaurar la versión anterior de PROD?",
+        disabledReason: noMfa,
+        onApprove: () => after(decide(request.requestId, "approve_rollback")),
+        onDeny: () => after(decide(request.requestId, "reject_rollback")),
+      };
+    }
+    return out;
+  }, [request, me.permissions, mfaEnabled, load]);
 
   if (error && !request) {
     return (
@@ -131,6 +170,26 @@ export function RequestDetailPage({ me, mfaEnabled }: { me: Me; mfaEnabled: bool
   const node = wf?.nodes.find((n) => n.id === selected) ?? null;
   const working = isActive(request.status);
   const canStart = request.status === "planned" && (me.permissions.includes("approvals.decide") || (me.permissions.includes("requests.create") && request.createdBy.id === me.user.id));
+  const canControl = me.permissions.includes("approvals.decide") || me.permissions.includes("deployments.operate") || (me.permissions.includes("requests.create") && request.createdBy.id === me.user.id);
+  const canStop = canControl && ["planning", "queued", "developing"].includes(request.status);
+  const canResume = canControl && request.status === "stopped";
+  const canCancel = canControl && !["approved", "deploying", "rollback_approved", "rolling_back", "deployed", "rejected", "cancelled", "rolled_back"].includes(request.status);
+
+  async function runControl(kind: "stop" | "cancel" | "resume") {
+    setControlBusy(true);
+    setControlError(null);
+    try {
+      if (kind === "stop") await stopRequest(request!.requestId);
+      else if (kind === "cancel") await cancelRequest(request!.requestId);
+      else await resumeRequest(request!.requestId);
+      setControl(null);
+      await load();
+    } catch (e) {
+      setControlError(e instanceof ApiError ? e.message : "No se pudo completar la acción.");
+    } finally {
+      setControlBusy(false);
+    }
+  }
 
   async function runPlan() {
     setStarting(true);
@@ -148,7 +207,7 @@ export function RequestDetailPage({ me, mfaEnabled }: { me: Me; mfaEnabled: bool
   const toggle = (ref: React.RefObject<ImperativePanelHandle>, open: boolean) => (open ? ref.current?.collapse() : ref.current?.expand());
 
   const canvas = wf ? (
-    <WorkflowCanvas workflow={wf} nodeState={request.nodeState ?? {}} selected={selected} technical={technical} onSelect={setSelected} />
+    <WorkflowCanvas workflow={wf} nodeState={request.nodeState ?? {}} selected={selected} technical={technical} onSelect={setSelected} decisions={decisions} />
   ) : (
     <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
       <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> El Analista y el Orquestador están armando el plan real…
@@ -156,7 +215,7 @@ export function RequestDetailPage({ me, mfaEnabled }: { me: Me; mfaEnabled: bool
   );
 
   const inspector = node ? (
-    <NodeInspector request={request} node={node} events={events} technical={technical} permissions={me.permissions} userId={me.user.id} onClose={() => setSelected(null)} onChanged={() => void load()}>
+    <NodeInspector request={request} node={node} events={events} technical={technical} permissions={me.permissions} userId={me.user.id} companyName={me.company.name} onClose={() => setSelected(null)} onChanged={() => void load()}>
       {node.id === "human-approval" && <ApprovalNodePanel request={request} permissions={me.permissions} userId={me.user.id} mfaEnabled={mfaEnabled} onDone={() => void load()} />}
       {node.id === "rollback" && <RollbackNodePanel request={request} permissions={me.permissions} mfaEnabled={mfaEnabled} onDone={() => void load()} />}
     </NodeInspector>
@@ -213,6 +272,21 @@ export function RequestDetailPage({ me, mfaEnabled }: { me: Me; mfaEnabled: bool
               <Cpu className="h-3.5 w-3.5" aria-hidden="true" /> Técnica
             </button>
           </div>
+          {canStop && (
+            <button type="button" className="btn-ghost px-2.5 py-1 text-xs text-warn" onClick={() => setControl("stop")}>
+              <Pause className="h-3.5 w-3.5" aria-hidden="true" /> Detener
+            </button>
+          )}
+          {canResume && (
+            <button type="button" className="btn-primary px-2.5 py-1 text-xs" disabled={controlBusy} onClick={() => void runControl("resume")}>
+              {controlBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <RotateCw className="h-3.5 w-3.5" aria-hidden="true" />} Reanudar
+            </button>
+          )}
+          {canCancel && (
+            <button type="button" className="btn-ghost px-2.5 py-1 text-xs text-bad" onClick={() => setControl("cancel")}>
+              <Ban className="h-3.5 w-3.5" aria-hidden="true" /> Cancelar
+            </button>
+          )}
           {request.prUrl && (
             <a href={request.prUrl} target="_blank" rel="noreferrer" className="btn-ghost px-2.5 py-1 text-xs">
               <GitPullRequest className="h-3.5 w-3.5" aria-hidden="true" /> PR #{request.prNumber}
@@ -220,6 +294,28 @@ export function RequestDetailPage({ me, mfaEnabled }: { me: Me; mfaEnabled: bool
           )}
         </div>
       </div>
+
+      {control && (
+        <section className="glass flex flex-wrap items-center gap-3 border-warn/40 p-3 text-sm" role="alertdialog" aria-label={control === "stop" ? "Detener ejecución" : "Cancelar solicitud"}>
+          <p className="min-w-0 flex-1">
+            {control === "stop"
+              ? "Detener corta la ejecución en curso. Los agentes que estaban trabajando quedan cancelados y podrás reanudar después (se crea una nueva iteración)."
+              : "Cancelar cierra la solicitud definitivamente. Si hay un PR abierto, queda en GitHub para que lo cierres."}
+          </p>
+          <button type="button" className={control === "stop" ? "btn-primary" : "btn-ghost text-bad"} disabled={controlBusy} onClick={() => void runControl(control)}>
+            {controlBusy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />} {control === "stop" ? "Sí, detener" : "Sí, cancelar"}
+          </button>
+          <button type="button" className="btn-ghost" disabled={controlBusy} onClick={() => setControl(null)}>
+            Volver
+          </button>
+        </section>
+      )}
+      {controlError && <p className="text-sm text-bad" role="alert">{controlError}</p>}
+      {request.status === "stopped" && request.stopped && (
+        <p className="glass p-3 text-sm text-warn">
+          Detenida por {request.stopped.by.name ?? request.stopped.by.email} el {new Date(request.stopped.at).toLocaleString("es-CO")}. Pulsa «Reanudar» para continuar.
+        </p>
+      )}
 
       {summary && (
         <section className="glass grid gap-2 p-3 text-sm sm:grid-cols-3" aria-label="Resumen funcional">

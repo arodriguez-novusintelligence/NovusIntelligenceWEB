@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Loader2, X } from "lucide-react";
+import { BookOpen, Loader2, X } from "lucide-react";
+import { AgentDefinitionDialog } from "../agents/AgentDefinitionDialog";
 import { nodeIo, type AgentEvent, type NodeIo, type RequestDetail, type WorkflowNode } from "@/api/client";
 import { cn } from "@/lib/cn";
 import type { Permission } from "@/lib/navigation";
@@ -44,6 +45,7 @@ export function NodeInspector({
   onClose,
   onChanged,
   children,
+  companyName = "la empresa",
 }: {
   request: RequestDetail;
   node: WorkflowNode;
@@ -54,8 +56,10 @@ export function NodeInspector({
   onClose: () => void;
   onChanged: () => void;
   children?: ReactNode;
+  companyName?: string;
 }) {
   const [tab, setTab] = useState<Tab>("general");
+  const [showDef, setShowDef] = useState(false);
   const [attempt, setAttempt] = useState<number | null>(null);
   const [io, setIo] = useState<NodeIo | null | undefined>(undefined);
   const state = request.nodeState[node.id];
@@ -104,6 +108,9 @@ export function NodeInspector({
             {attempts.length > 1 ? ` · ${attempts.length} intentos` : ""}
           </p>
         </div>
+        <button type="button" className="btn-ghost px-2 py-1.5 text-xs" onClick={() => setShowDef(true)} title="Qué hace, cómo funciona, reglas internas y ajustes de la empresa">
+          <BookOpen className="h-3.5 w-3.5" aria-hidden="true" /> Ver definición
+        </button>
         <button type="button" className="btn-ghost px-2 py-1.5" aria-label="Cerrar inspector" onClick={onClose}>
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -165,6 +172,11 @@ export function NodeInspector({
           ))}
 
         {tab === "rules" && (
+          <button type="button" className="btn-ghost w-full justify-start px-3 py-2 text-xs" onClick={() => setShowDef(true)}>
+            <BookOpen className="h-3.5 w-3.5" aria-hidden="true" /> Ver definición del agente (reglas internas del framework y de {companyName})
+          </button>
+        )}
+        {tab === "rules" && (
           <RulesEditor requestId={request.requestId} nodeId={node.id} rules={request.rules} editable={canEditRules} lockedReason={lockedReason} onSaved={onChanged} />
         )}
 
@@ -212,6 +224,7 @@ export function NodeInspector({
             <p className="text-sm text-muted-foreground">Sin métricas: este paso no usa modelo o aún no se ejecuta.</p>
           ))}
       </div>
+      {showDef && <AgentDefinitionDialog agentId={node.agentId && node.agentId !== "devops-agent" ? node.agentId : node.id} companyName={companyName} onClose={() => setShowDef(false)} />}
     </aside>
   );
 }

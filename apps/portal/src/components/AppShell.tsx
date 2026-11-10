@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { BadgeCheck, Bot, LogOut, MessagesSquare, Plug, ScrollText, ShieldCheck, Sparkles, Users, type LucideIcon } from "lucide-react";
+import { BadgeCheck, Bot, LogOut, MessagesSquare, Plug, ScrollText, ShieldCheck, Sparkles, Users, Workflow, type LucideIcon } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import type { Me } from "@/api/client";
 import { config } from "@/config";
 import { cn } from "@/lib/cn";
 import { ROLE_LABELS, visibleNav, type NavIcon } from "@/lib/navigation";
+import { CompanyLogo } from "./CompanyLogo";
 import { NadfMark } from "./NadfMark";
 import { NeuralBackdrop } from "./NeuralBackdrop";
 
@@ -13,6 +14,7 @@ const ICONS: Record<NavIcon, LucideIcon> = {
   command: Sparkles,
   requests: MessagesSquare,
   approvals: BadgeCheck,
+  flows: Workflow,
   connectors: Plug,
   agents: Bot,
   team: Users,
@@ -87,7 +89,9 @@ export function AppShell({ me, children }: { me: Me; children: ReactNode }) {
           <div className="mt-auto hidden space-y-3 border-t border-white/10 pt-4 lg:block">
             <div className="min-w-0 px-1">
               <p className="truncate text-sm font-medium">{displayName}</p>
-              <p className="truncate text-xs text-muted-foreground">{me.company.name}</p>
+              <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+                <CompanyLogo name={me.company.name} canManage={false} size={18} /> {me.company.name}
+              </p>
               <div className="mt-2 flex flex-wrap gap-1">
                 {me.user.roles.map((r) => (
                   <span key={r} className="chip px-2 py-0.5 text-[11px]">
@@ -105,11 +109,12 @@ export function AppShell({ me, children }: { me: Me; children: ReactNode }) {
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex items-center justify-between gap-3 px-4 pt-4 lg:px-8 lg:pt-6">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="relative flex h-2 w-2">
+              <CompanyLogo name={me.company.name} canManage={me.permissions.includes("company.manage")} size={30} />
+              <span className="font-medium text-foreground">{me.company.name}</span>
+              <span className="relative flex h-2 w-2" aria-hidden="true">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-good/60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-good" />
               </span>
-              <span>{me.company.name}</span>
               {config.stage !== "prod" && (
                 <span className="rounded-md border border-warn/40 bg-warn/10 px-1.5 py-0.5 font-mono text-[10px] uppercase text-warn">
                   {config.stage}
