@@ -22,6 +22,7 @@ import {
 import type { NodeState, NodeStatus, WorkflowNode } from "@/api/client";
 import { cn } from "@/lib/cn";
 import { STATUS_LABEL, duration, elapsed } from "@/lib/studio";
+import { attemptCost, usd } from "@/lib/cost";
 
 export interface NodeDecision {
   /** Texto del botón afirmativo y de la confirmación. */
@@ -145,6 +146,7 @@ function AgentNodeView({ data }: NodeProps) {
   const Icon = KIND_ICON[node.kind as keyof typeof KIND_ICON] ?? Bot;
   const SIcon = status === "RUNNING" ? Loader2 : STATUS_ICON[status] ?? CircleDashed;
   const attempts = state?.attempts?.length ?? 0;
+  const spent = (state?.attempts ?? []).reduce((acc, a) => acc + attemptCost(a.metrics).usd, 0);
   const ms = elapsed(state);
   return (
     <div
@@ -172,6 +174,7 @@ function AgentNodeView({ data }: NodeProps) {
             <SIcon className={cn("h-3 w-3", status === "RUNNING" && "animate-spin")} aria-hidden="true" />
             {STATUS_LABEL[status]}
             {ms != null && status !== "SKIPPED" && <span className="text-muted-foreground"> · {duration(ms)}</span>}
+            {spent > 0 && <span className="text-muted-foreground"> · {usd(spent)}</span>}
           </p>
           {technical && node.agentId && <p className="truncate font-mono text-[10px] text-muted-foreground/80">{node.agentId}</p>}
         </div>

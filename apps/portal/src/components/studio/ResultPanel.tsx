@@ -5,9 +5,10 @@ import { cn } from "@/lib/cn";
 import type { Permission } from "@/lib/navigation";
 import { MILESTONE_LABEL, milestones, type Milestone } from "@/lib/studio";
 import { AppWindow } from "../pipeline/AppWindow";
+import { CostPanel } from "./CostPanel";
 import { ReportCard, Screenshots, TestList } from "../pipeline/ReportCard";
 
-type Tab = "preview" | "tests" | "deploy" | "evidence";
+type Tab = "preview" | "tests" | "deploy" | "cost" | "evidence";
 
 function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
@@ -74,6 +75,7 @@ export function ResultPanel({ request, permissions, onChanged }: { request: Requ
             ["preview", "Vista previa del cambio"],
             ["tests", "Pruebas"],
             ["deploy", "Despliegue"],
+            ["cost", "Costo"],
             ["evidence", "Evidencias"],
           ] as [Tab, string][]
         ).map(([id, label]) => (
@@ -225,6 +227,8 @@ export function ResultPanel({ request, permissions, onChanged }: { request: Requ
             )}
           </div>
         )}
+
+        {tab === "cost" && <CostPanel request={request} />}
 
         {tab === "evidence" && (
           <div className="space-y-3 text-sm">

@@ -103,6 +103,7 @@ export interface RequestSummary {
   createdAt: string;
   updatedAt: string;
   prUrl: string | null;
+  cost?: { usd: number; estimated: boolean };
 }
 
 export interface TestResult {

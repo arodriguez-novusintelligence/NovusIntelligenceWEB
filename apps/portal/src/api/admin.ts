@@ -120,6 +120,6 @@ export interface GovernanceInfo {
   approvalModel: { policy: string; gates: { id: string; required?: boolean; required_when?: string; owner?: string }[]; invariants: string[] };
   framework: { sha?: string; branch?: string };
   audit: { at: string; by: Actor; action: string; detail: Record<string, unknown> }[];
-  usage: { requests: number; byStatus: Record<string, number>; costUsd: number; costNote: string };
+  usage: { requests: number; byStatus: Record<string, number>; costUsd: number; costNote: string; byRequest?: { requestId: string; title: string; status: string; usd: number; estimated: boolean }[] };
 }
 export const getGovernance = () => apiGet<GovernanceInfo>("/api/v1/portal/governance");

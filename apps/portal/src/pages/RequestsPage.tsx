@@ -71,6 +71,11 @@ export function RequestsPage({ me, onlyApprovals = false }: { me: Me; onlyApprov
                   {r.iteration > 1 ? ` · iteración ${r.iteration}` : ""}
                 </p>
               </div>
+              {r.cost && r.cost.usd > 0 && (
+                <span className="hidden text-xs tabular-nums text-muted-foreground sm:inline" title={r.cost.estimated ? "Incluye valores estimados" : "Costo acumulado"}>
+                  {r.cost.usd.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                </span>
+              )}
               <StatusBadge status={r.status} />
               <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
             </Link>

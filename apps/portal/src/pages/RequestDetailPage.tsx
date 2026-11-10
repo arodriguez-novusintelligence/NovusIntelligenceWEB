@@ -15,6 +15,7 @@ import { WorkflowCanvas } from "@/components/studio/WorkflowCanvas";
 import { cn } from "@/lib/cn";
 import { isActive, timeAgo } from "@/lib/pipeline";
 import { functionalSummary, mergeEvents } from "@/lib/studio";
+import { costBreakdown, usd } from "@/lib/cost";
 
 const POLL_ACTIVE = 2500;
 const POLL_IDLE = 15000;
@@ -262,6 +263,14 @@ export function RequestDetailPage({ me, mfaEnabled }: { me: Me; mfaEnabled: bool
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={request.status} />
+          {(() => {
+            const c = costBreakdown(request.workflow, request.nodeState);
+            return c.total > 0 ? (
+              <span className="chip tabular-nums" title="Costo acumulado de la ejecución (detalle en Resultado → Costo)">
+                Costo: {usd(c.total)}
+              </span>
+            ) : null;
+          })()}
           <span className={cn("inline-flex items-center gap-1 text-xs", online ? "text-good" : "text-warn")} role="status">
             {online ? <Wifi className="h-3.5 w-3.5" aria-hidden="true" /> : <WifiOff className="h-3.5 w-3.5" aria-hidden="true" />} {online ? "Conectado" : "Reconectando…"}
           </span>

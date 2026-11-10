@@ -81,6 +81,21 @@ export function GovernancePage({ me }: { me: Me }) {
             </h2>
             <p className="text-3xl font-semibold">{data.usage.costUsd.toFixed(2)} USD</p>
             <p className="text-xs text-muted-foreground">{data.usage.costNote}</p>
+            {data.usage.byRequest?.length ? (
+              <ul className="space-y-2" aria-label="Costo por solicitud">
+                {data.usage.byRequest.map((r) => (
+                  <li key={r.requestId} className="grid grid-cols-[minmax(0,1fr)_120px_auto] items-center gap-3 text-sm">
+                    <a href={`/solicitudes/${r.requestId}`} className="truncate hover:underline" title={r.title}>
+                      {r.title}
+                    </a>
+                    <span className="h-2.5 rounded-full bg-white/[0.06]" aria-hidden="true">
+                      <span className="block h-full rounded-full bg-primary" style={{ width: `${Math.max(2, (r.usd / data.usage.byRequest![0].usd) * 100)}%` }} />
+                    </span>
+                    <span className="text-right tabular-nums">{r.usd.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
             <div className="flex flex-wrap gap-1.5">
               <span className="chip">{data.usage.requests} solicitudes</span>
               {Object.entries(data.usage.byStatus).map(([k, v]) => (
