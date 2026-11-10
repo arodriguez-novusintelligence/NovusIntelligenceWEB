@@ -317,6 +317,16 @@ export function RequestDetailPage({ me, mfaEnabled }: { me: Me; mfaEnabled: bool
         </p>
       )}
 
+      {wf?.policy && (
+        <section className="flex flex-wrap items-center gap-1.5 text-xs" aria-label="Política aplicada">
+          <span className="text-muted-foreground">Política:</span>
+          <span className="chip">Cambio {({ ajuste_visual: "ajuste visual", evolutivo: "evolutivo", nueva_funcionalidad: "nueva funcionalidad", cambio_arquitectonico: "arquitectónico" } as Record<string, string>)[wf.policy.naturaleza] ?? wf.policy.naturaleza}{wf.policy.tamano === "grande" ? " grande" : ""}</span>
+          {wf.policy.critico && <span className="chip border-warn/40 text-warn">Crítico{wf.policy.motivoCritico ? `: ${wf.policy.motivoCritico}` : ""}</span>}
+          <span className="chip">{wf.policy.adrRequired ? "Requiere ADR" : "Sin ADR"}</span>
+          {wf.policy.budgetUsd != null && <span className="chip">Tope de desarrollo {wf.policy.budgetUsd} USD</span>}
+          {wf.policy.models?.analysis && <span className="chip font-mono text-[10px]">análisis: {wf.policy.models.analysis}</span>}
+        </section>
+      )}
       {(request.attachments?.length ?? 0) > 0 && (
         <section className="flex flex-wrap items-center gap-1.5 text-xs" aria-label="Adjuntos de la solicitud">
           <span className="text-muted-foreground">Adjuntos:</span>

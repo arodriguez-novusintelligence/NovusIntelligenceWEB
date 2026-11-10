@@ -185,6 +185,8 @@ export interface Workflow {
   edges: { id: string; source: string; target: string; label?: string | null }[];
   framework?: { repo?: string; sha?: string; branch?: string; dirty?: boolean };
   createdAt?: string;
+  /** Política por naturaleza aplicada (agent-policy.yml). */
+  policy?: { naturaleza: string; tamano?: string | null; critico: boolean; motivoCritico?: string | null; adrRequired: boolean; models?: { analysis?: string; development?: string }; budgetUsd?: number | null } | null;
 }
 
 export interface Rules {
