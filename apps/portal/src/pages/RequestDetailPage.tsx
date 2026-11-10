@@ -317,6 +317,18 @@ export function RequestDetailPage({ me, mfaEnabled }: { me: Me; mfaEnabled: bool
         </p>
       )}
 
+      {(request.attachments?.length ?? 0) > 0 && (
+        <section className="flex flex-wrap items-center gap-1.5 text-xs" aria-label="Adjuntos de la solicitud">
+          <span className="text-muted-foreground">Adjuntos:</span>
+          {request.attachments!.map((a) => (
+            <a key={a.key} href={a.url} target="_blank" rel="noreferrer" className="chip hover:border-white/25" title={`${a.name} · ${Math.max(1, Math.round(a.size / 1024))} KB`}>
+              {a.kind === "image" ? <img src={a.url} alt="" className="h-4 w-4 rounded object-cover" /> : <span className="font-mono text-[10px] uppercase text-secondary">{a.kind === "word" ? "docx" : a.kind === "pdf" ? "pdf" : "txt"}</span>}
+              <span className="max-w-[200px] truncate">{a.name}</span>
+            </a>
+          ))}
+        </section>
+      )}
+
       {summary && (
         <section className="glass grid gap-2 p-3 text-sm sm:grid-cols-3" aria-label="Resumen funcional">
           <p>

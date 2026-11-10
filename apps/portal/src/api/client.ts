@@ -31,6 +31,9 @@ async function call<T>(method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE", path
     body: body ? JSON.stringify(body) : undefined,
   });
   const payload = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
+  if (res.status === 404 && payload.message === "Not Found" && !payload.code) {
+    throw new ApiError(404, "SERVICE_NOT_DEPLOYED", "Este servicio todavía no está disponible en el servidor: falta desplegar la actualización del backend del portal.");
+  }
   if (!res.ok) {
     throw new ApiError(res.status, payload.code ?? "HTTP_ERROR", payload.message ?? "No pudimos comunicarnos con NADF.");
   }
@@ -232,6 +235,7 @@ export interface RequestDetail {
   stopped?: { by: Actor; at: string; reason?: string; previousStatus: RequestStatus };
   cancelled?: { by: Actor; at: string; reason?: string };
   flowTemplate?: { id: string; name: string; version: number; agents: string[] } | null;
+  attachments?: { key: string; name: string; contentType: string; size: number; kind: "image" | "text" | "word" | "pdf"; url: string }[];
   rollback?: { requestedBy: Actor; requestedAt: string; reason: string; risks: string[]; approvedBy?: Actor; approvedAt?: string; finishedAt?: string; revertPrUrl?: string | null; smoke?: TestResult[] } | null;
   headSha?: string;
   changedFiles?: string[];
@@ -275,8 +279,8 @@ export const listApps = () => apiGet<{ apps: ConnectedApp[] }>("/api/v1/portal/a
 export const listRequests = () => apiGet<{ requests: RequestSummary[] }>("/api/v1/portal/requests").then((r) => r.requests);
 export const getRequest = (id: string, after?: string) =>
   apiGet<{ request: RequestDetail; events: AgentEvent[] }>(`/api/v1/portal/requests/${id}${after ? `?after=${encodeURIComponent(after)}` : ""}`);
-export const createRequest = (prompt: string, appId?: string, flowId?: string) =>
-  apiPost<{ request: RequestSummary }>("/api/v1/portal/requests", { prompt, appId, flowId: flowId || undefined }).then((r) => r.request);
+export const createRequest = (prompt: string, appId?: string, flowId?: string, attachments: { key: string; name: string; contentType: string }[] = []) =>
+  apiPost<{ request: RequestSummary }>("/api/v1/portal/requests", { prompt, appId, flowId: flowId || undefined, attachments }).then((r) => r.request);
 export type DecisionKind = "approve" | "reject" | "changes" | "approve_rollback" | "reject_rollback";
 export const updateRules = (id: string, nodeId: string, configurable: string[]) =>
   apiPut<{ rules: Rules }>(`/api/v1/portal/requests/${id}/rules`, { nodeId, configurable }).then((r) => r.rules);
