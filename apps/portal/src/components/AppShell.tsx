@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { BadgeCheck, Bot, LogOut, MessagesSquare, Plug, ScrollText, ShieldCheck, Sparkles, Users, type LucideIcon } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import type { Me } from "@/api/client";
@@ -22,6 +22,12 @@ const ICONS: Record<NavIcon, LucideIcon> = {
 
 export function AppShell({ me, children }: { me: Me; children: ReactNode }) {
   const { logout } = useAuth();
+  const navigate = useNavigate();
+  // Al salir siempre se vuelve al inicio: quien ingrese después no cae en la vista del usuario anterior.
+  const exit = async () => {
+    navigate("/", { replace: true });
+    await logout();
+  };
   const items = visibleNav(me.permissions);
   const displayName = me.user.name ?? me.user.email;
 
@@ -90,7 +96,7 @@ export function AppShell({ me, children }: { me: Me; children: ReactNode }) {
                 ))}
               </div>
             </div>
-            <button type="button" onClick={() => void logout()} className="btn-ghost w-full">
+            <button type="button" onClick={() => void exit()} className="btn-ghost w-full">
               <LogOut className="h-4 w-4" aria-hidden="true" /> Cerrar sesión
             </button>
           </div>
@@ -110,7 +116,7 @@ export function AppShell({ me, children }: { me: Me; children: ReactNode }) {
                 </span>
               )}
             </div>
-            <button type="button" onClick={() => void logout()} className="btn-ghost px-3 py-2 lg:hidden" aria-label="Cerrar sesión">
+            <button type="button" onClick={() => void exit()} className="btn-ghost px-3 py-2 lg:hidden" aria-label="Cerrar sesión">
               <LogOut className="h-4 w-4" aria-hidden="true" />
             </button>
           </header>

@@ -48,7 +48,8 @@ const env = {
 if (!skipBuild) {
   console.log(`Compilando portal (${stage})…`);
   run(require.resolve("typescript/bin/tsc"), ["--noEmit", "-p", "tsconfig.json"], env);
-  run(require.resolve("vite/bin/vite.js"), ["build"], env);
+  // vite no exporta bin/vite.js; se ubica desde su package.json (que sí está exportado).
+  run(resolve(dirname(require.resolve("vite/package.json")), "bin", "vite.js"), ["build"], env);
 }
 
 const bucket = outputs.PortalSiteBucketName;
@@ -56,7 +57,7 @@ const dist = resolve(appDir, "dist");
 console.log(`Publicando en s3://${bucket}…`);
 // Archivos con hash: caché larga. index.html y el resto: siempre revalidar.
 aws(["s3", "sync", dist, `s3://${bucket}/`, "--delete", "--exclude", "index.html", "--cache-control", "public,max-age=31536000,immutable"]);
-aws(["s3", "cp", resolve(dist, "index.html"), `s3://${bucket}/index.html`, "--cache-control", "no-cache", "--content-type", "text/html; charset=utf-8"]);
+aws(["s3", "cp", resolve(dist, "index.html"), `s3://${bucket}/index.html`, "--cache-control", "no-cache", "--content-type", "text/html;charset=utf-8"]);
 
 const invalidation = JSON.parse(
   aws(["cloudfront", "create-invalidation", "--distribution-id", outputs.PortalDistributionId, "--paths", "/index.html", "/"]),
