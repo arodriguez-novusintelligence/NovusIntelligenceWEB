@@ -18,6 +18,7 @@ const ACTION_LABEL: Record<string, string> = {
   "deploy.reject": "Rechazó un despliegue",
   "deploy.changes": "Pidió ajustes",
   "rollback.requested": "Solicitó un rollback",
+  "risk.accepted": "Aceptó el riesgo de un bloqueo",
 };
 
 /** Gobierno: políticas obligatorias, modelo de aprobación, auditoría y consumo. */
@@ -79,7 +80,7 @@ export function GovernancePage({ me }: { me: Me }) {
             <h2 className="flex items-center gap-2 text-lg font-semibold">
               <Wallet className="h-5 w-5 text-secondary" aria-hidden="true" /> Consumo
             </h2>
-            <p className="text-3xl font-semibold">{data.usage.costUsd.toFixed(2)} USD</p>
+            <p className="font-display text-3xl font-semibold tabular-nums">{data.usage.costUsd.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</p>
             <p className="text-xs text-muted-foreground">{data.usage.costNote}</p>
             {data.usage.byRequest?.length ? (
               <ul className="space-y-2" aria-label="Costo por solicitud">

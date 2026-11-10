@@ -73,7 +73,7 @@ export function CostPanel({ request }: { request: RequestDetail }) {
                   {usd(n.usd)} <span className="text-xs text-muted-foreground">· {Math.round(pct)} %</span>
                 </span>
                 {hover === n.nodeId && (
-                  <span role="tooltip" className="glass-strong absolute right-0 top-full z-20 mt-1 w-64 space-y-0.5 p-3 text-xs shadow-xl">
+                  <span role="tooltip" className="glass-strong pointer-events-none absolute bottom-full left-[150px] z-20 mb-1 w-64 space-y-0.5 p-3 text-xs shadow-xl">
                     <span className="block font-medium text-foreground">{n.label}</span>
                     <span className="block text-muted-foreground">Modelo: {n.models.join(", ") || "—"}</span>
                     <span className="block text-muted-foreground">Entrada: {compactTokens(n.inputTokens)} tokens</span>

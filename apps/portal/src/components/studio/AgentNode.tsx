@@ -170,11 +170,11 @@ function AgentNodeView({ data }: NodeProps) {
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-foreground">{node.label}</p>
-          <p className={cn("flex items-center gap-1 text-[11px]", BADGE_TONE[status])}>
+          <p className={cn("flex flex-wrap items-center gap-x-1 whitespace-nowrap text-[11px]", BADGE_TONE[status])}>
             <SIcon className={cn("h-3 w-3", status === "RUNNING" && "animate-spin")} aria-hidden="true" />
             {STATUS_LABEL[status]}
-            {ms != null && status !== "SKIPPED" && <span className="text-muted-foreground"> · {duration(ms)}</span>}
-            {spent > 0 && <span className="text-muted-foreground"> · {usd(spent)}</span>}
+            {ms != null && status !== "SKIPPED" && <span className="text-muted-foreground">· {duration(ms)}</span>}
+            {spent > 0 && <span className="text-muted-foreground">· {usd(spent)}</span>}
           </p>
           {technical && node.agentId && <p className="truncate font-mono text-[10px] text-muted-foreground/80">{node.agentId}</p>}
         </div>
